@@ -936,6 +936,143 @@ button,
   }
 }
 
+
+.touch-command-bar{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  padding:9px 10px;
+  min-height:48px;
+  overflow-x:auto;
+  overscroll-behavior-x:contain;
+  -webkit-overflow-scrolling:touch;
+  border-top:1px solid #34404e;
+  border-bottom:1px solid #34404e;
+  background:#25282c;
+  scrollbar-width:thin;
+}
+.touch-command{
+  flex:0 0 auto;
+  min-height:36px;
+  padding:7px 12px;
+  border:1px solid #3c5067;
+  border-radius:8px;
+  background:#172434;
+  color:#eef4fb;
+  font:800 11px/1 "DIN","DIN Pro","DIN Alternate",Bahnschrift,Arial,sans-serif;
+  cursor:pointer;
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+}
+.touch-command.compact{padding-inline:10px}
+.touch-command:hover{border-color:#5c7898;background:#1d3045}
+.touch-command:active{transform:translateY(1px)}
+.touch-command.primary{
+  background:#31547a;
+  border-color:#5b82ad;
+}
+.touch-command.danger{
+  background:#4b2024;
+  border-color:#84454d;
+}
+.touch-command.active{
+  background:#8bd450;
+  border-color:#a4ed69;
+  color:#071008;
+}
+.touch-command-divider{
+  flex:0 0 1px;
+  width:1px;
+  height:28px;
+  background:#46515d;
+  margin:0 2px;
+}
+.field-fullscreen-exit{
+  display:none;
+  position:fixed;
+  top:max(12px,env(safe-area-inset-top));
+  right:max(12px,env(safe-area-inset-right));
+  z-index:10003;
+  width:46px;
+  height:46px;
+  border-radius:50%;
+  border:1px solid #394b60;
+  background:rgba(11,18,27,.92);
+  color:#fff;
+  font-size:30px;
+  line-height:1;
+  cursor:pointer;
+  touch-action:manipulation;
+}
+body.field-view-mode{
+  overflow:hidden!important;
+  background:#fff!important;
+}
+body.field-view-mode .board-shell{
+  position:fixed!important;
+  inset:0!important;
+  z-index:10000!important;
+  width:100vw!important;
+  height:100vh!important;
+  margin:0!important;
+  padding:
+    max(18px,env(safe-area-inset-top))
+    max(18px,env(safe-area-inset-right))
+    max(18px,env(safe-area-inset-bottom))
+    max(18px,env(safe-area-inset-left))!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  background:#fff!important;
+  box-sizing:border-box!important;
+  overflow:hidden!important;
+}
+body.field-view-mode #board{
+  width:min(
+    calc(100vw - max(36px,env(safe-area-inset-left)) - max(36px,env(safe-area-inset-right))),
+    calc((100vh - max(36px,env(safe-area-inset-top)) - max(36px,env(safe-area-inset-bottom))) * 1.6129)
+  )!important;
+  height:auto!important;
+  aspect-ratio:1000 / 620!important;
+  max-width:none!important;
+  max-height:none!important;
+  flex:none!important;
+}
+body.field-view-mode .field-fullscreen-exit{
+  display:block;
+}
+body.field-locked #board{
+  cursor:not-allowed;
+}
+body.field-locked #board::after{
+  content:"Campo bloccato";
+  position:absolute;
+  left:50%;
+  bottom:12px;
+  transform:translateX(-50%);
+  z-index:999;
+  padding:6px 12px;
+  border-radius:999px;
+  background:rgba(10,18,28,.82);
+  color:#fff;
+  font-size:11px;
+  font-weight:800;
+  pointer-events:none;
+}
+
+@media(max-width:1100px), (pointer:coarse){
+  .touch-command-bar{
+    gap:8px;
+    min-height:58px;
+    padding:10px 12px;
+  }
+  .touch-command{
+    min-height:42px;
+    padding:9px 14px;
+    font-size:12px;
+  }
+}
+
 </style>
 
 <script async src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -1068,6 +1205,7 @@ button,
     </div>
   </div>
   <div class="board-shell">
+    <button type="button" class="field-fullscreen-exit" id="fieldFullscreenExitBtn" title="Esci dalla modalità campo intero">×</button>
     <div id="board">
       <div class="pitch"></div><div class="half"></div><div class="center-circle"></div><div class="center-dot"></div>
       <div class="penalty left"></div><div class="penalty right"></div><div class="six left"></div><div class="six right"></div>
@@ -1076,6 +1214,31 @@ button,
       <div id="playersLayer"></div><div id="ballsLayer"></div><div id="textsLayer"></div><div class="selection-box" id="selectionBox"></div>
     </div>
   </div>
+
+  <div class="touch-command-bar" id="touchCommandBar" aria-label="Comandi rapidi">
+    <button type="button" class="touch-command" id="touchCopyBtn" title="Copia selezione">Copia</button>
+    <button type="button" class="touch-command" id="touchPasteBtn" title="Incolla selezione">Incolla</button>
+    <button type="button" class="touch-command danger" id="touchDeleteBtn" title="Elimina o rimuovi la selezione">Elimina</button>
+
+    <span class="touch-command-divider"></span>
+
+    <button type="button" class="touch-command" id="touchAlignHorizontalBtn" title="Allinea orizzontalmente">Allinea H</button>
+    <button type="button" class="touch-command" id="touchAlignVerticalBtn" title="Allinea verticalmente">Allinea V</button>
+    <button type="button" class="touch-command" id="touchDistributeBtn" title="Distribuisci uniformemente">Distribuisci</button>
+
+    <span class="touch-command-divider"></span>
+
+    <button type="button" class="touch-command compact" id="touchBringFrontBtn" title="Porta in primo piano">Primo piano</button>
+    <button type="button" class="touch-command compact" id="touchBringForwardBtn" title="Porta avanti">Avanti</button>
+    <button type="button" class="touch-command compact" id="touchSendBackwardBtn" title="Porta indietro">Indietro</button>
+    <button type="button" class="touch-command compact" id="touchSendBackBtn" title="Porta sullo sfondo">Sfondo</button>
+
+    <span class="touch-command-divider"></span>
+
+    <button type="button" class="touch-command" id="touchLockBtn" aria-pressed="false" title="Blocca modifiche sul campo">Blocca</button>
+    <button type="button" class="touch-command primary" id="touchFullscreenBtn" title="Mostra solo il campo">Campo intero</button>
+  </div>
+
   <div class="legend">
     <span><i class="dot" style="background:var(--home)"></i>Squadra</span>
     <span><i class="dot" style="background:var(--away)"></i>Avversari</span>
@@ -1300,7 +1463,7 @@ button,
 <input type="file" id="projectFile" accept=".json" hidden>
 
 <script>
-const STORAGE_KEY="setPieceBoardPro_v114";
+const STORAGE_KEY="setPieceBoardPro_v115";
 
 function safeStorageGet(key){
   try{
@@ -4579,91 +4742,227 @@ function pasteClipboardSelection(){
   setStatus(count===1 ? "Elemento incollato" : `${count} elementi incollati`);
 }
 
+
+function deleteCurrentSelection(){
+  const hasObjectSelection=
+    selectedBalls.size ||
+    selectedTexts.size ||
+    selectedDrawings.size;
+
+  if(hasObjectSelection){
+    pushHistory();
+
+    [...selectedBalls].sort((a,b)=>b-a).forEach(i=>{
+      page().balls.splice(i,1);
+    });
+    [...selectedTexts].sort((a,b)=>b-a).forEach(i=>{
+      page().texts.splice(i,1);
+    });
+    [...selectedDrawings].sort((a,b)=>b-a).forEach(i=>{
+      page().drawings.splice(i,1);
+    });
+
+    clearObjectSelections();
+    renderBalls();
+    renderTexts();
+    renderDrawings();
+    refreshObjectSelectionVisuals();
+    save(false);
+    setStatus("Oggetti selezionati eliminati");
+    return true;
+  }
+
+  if(selectedText!==null && page().texts?.[selectedText]){
+    pushHistory();
+    page().texts.splice(selectedText,1);
+    selectedText=null;
+    renderTexts();
+    save(false);
+    setStatus("Testo eliminato");
+    return true;
+  }
+
+  if(selectedBall!==null && page().balls?.[selectedBall]){
+    pushHistory();
+    page().balls.splice(selectedBall,1);
+    selectedBall=null;
+    renderBalls();
+    save(false);
+    setStatus("Pallone eliminato");
+    return true;
+  }
+
+  if(selectedDrawing!==null && page().drawings?.[selectedDrawing]){
+    pushHistory();
+    page().drawings.splice(selectedDrawing,1);
+    selectedDrawing=null;
+    renderDrawings();
+    save(false);
+    setStatus("Elemento grafico eliminato");
+    return true;
+  }
+
+  if(selectedPlayers.size){
+    pushHistory();
+
+    [...selectedPlayers].forEach(index=>{
+      if(page().positions[index])page().positions[index]=null;
+    });
+
+    selectedPlayers.clear();
+    renderPlayers();
+    renderRoster();
+    refreshSelectionVisuals();
+    updateLineupCounters();
+    save(false);
+    setStatus("Giocatori rimossi dallo schema e restituiti alla lista");
+    return true;
+  }
+
+  setStatus("Nessun elemento selezionato");
+  return false;
+}
+
+
+function moveSelectedIndexesWithinArray(array,selectedSet,mode){
+  const selected=[...selectedSet]
+    .filter(index=>array[index]!==undefined)
+    .sort((a,b)=>a-b);
+
+  if(!selected.length)return null;
+
+  const selectedItems=selected.map(index=>array[index]);
+  const selectedLookup=new Set(selected);
+  const remaining=array.filter((_,index)=>!selectedLookup.has(index));
+
+  let insertAt;
+
+  if(mode==="front"){
+    insertAt=remaining.length;
+  }else if(mode==="back"){
+    insertAt=0;
+  }else if(mode==="forward"){
+    const last=selected[selected.length-1];
+    insertAt=Math.min(
+      remaining.length,
+      remaining.filter((_,index)=>{
+        const originalIndex=array.indexOf(remaining[index]);
+        return originalIndex<=last;
+      }).length+1
+    );
+  }else{
+    const first=selected[0];
+    insertAt=Math.max(
+      0,
+      remaining.filter((_,index)=>{
+        const originalIndex=array.indexOf(remaining[index]);
+        return originalIndex<first;
+      }).length-1
+    );
+  }
+
+  const next=[
+    ...remaining.slice(0,insertAt),
+    ...selectedItems,
+    ...remaining.slice(insertAt)
+  ];
+
+  const newSelection=new Set();
+  for(let i=0;i<selectedItems.length;i++){
+    newSelection.add(insertAt+i);
+  }
+
+  array.splice(0,array.length,...next);
+  return newSelection;
+}
+
+function changeSelectedLayer(mode){
+  let changed=false;
+  pushHistory();
+
+  if(selectedDrawings.size || selectedDrawing!==null){
+    if(!selectedDrawings.size && selectedDrawing!==null){
+      selectedDrawings.add(selectedDrawing);
+    }
+    const next=moveSelectedIndexesWithinArray(
+      page().drawings,
+      selectedDrawings,
+      mode
+    );
+    if(next){
+      selectedDrawings=next;
+      selectedDrawing=next.size===1?[...next][0]:null;
+      changed=true;
+    }
+  }
+
+  if(selectedBalls.size || selectedBall!==null){
+    if(!selectedBalls.size && selectedBall!==null){
+      selectedBalls.add(selectedBall);
+    }
+    const next=moveSelectedIndexesWithinArray(
+      page().balls,
+      selectedBalls,
+      mode
+    );
+    if(next){
+      selectedBalls=next;
+      selectedBall=next.size===1?[...next][0]:null;
+      changed=true;
+    }
+  }
+
+  if(selectedTexts.size || selectedText!==null){
+    if(!selectedTexts.size && selectedText!==null){
+      selectedTexts.add(selectedText);
+    }
+    const next=moveSelectedIndexesWithinArray(
+      page().texts,
+      selectedTexts,
+      mode
+    );
+    if(next){
+      selectedTexts=next;
+      selectedText=next.size===1?[...next][0]:null;
+      changed=true;
+    }
+  }
+
+  if(!changed){
+    undoStack.pop();
+    setStatus(
+      selectedPlayers.size
+        ? "I livelli sono disponibili per frecce, forme, palloni e testi"
+        : "Seleziona un oggetto grafico"
+    );
+    return;
+  }
+
+  renderBalls();
+  renderTexts();
+  renderDrawings();
+  refreshObjectSelectionVisuals();
+  save(false);
+
+  const labels={
+    front:"Portato in primo piano",
+    forward:"Portato avanti",
+    backward:"Portato indietro",
+    back:"Portato sullo sfondo"
+  };
+  setStatus(labels[mode]);
+}
+
 document.addEventListener("keydown",e=>{
   if(e.key==="Escape"){
     clearAllSelections();
     return;
   }
 
-  if(e.key==="Delete" || e.key==="Backspace"){
-    const hasObjectSelection=
-      selectedBalls.size ||
-      selectedTexts.size ||
-      selectedDrawings.size;
-
-    if(hasObjectSelection){
-      e.preventDefault();
-      pushHistory();
-
-      [...selectedBalls].sort((a,b)=>b-a).forEach(i=>{
-        page().balls.splice(i,1);
-      });
-      [...selectedTexts].sort((a,b)=>b-a).forEach(i=>{
-        page().texts.splice(i,1);
-      });
-      [...selectedDrawings].sort((a,b)=>b-a).forEach(i=>{
-        page().drawings.splice(i,1);
-      });
-
-      clearObjectSelections();
-      renderBalls();
-      renderTexts();
-      renderDrawings();
-      refreshObjectSelectionVisuals();
-      save(false);
-      setStatus("Oggetti selezionati eliminati");
-      return;
-    }
-
-    if(selectedText!==null && page().texts?.[selectedText]){
-      e.preventDefault();
-      pushHistory();
-      page().texts.splice(selectedText,1);
-      selectedText=null;
-      renderTexts();
-      save(false);
-      setStatus("Testo eliminato");
-      return;
-    }
-    if(selectedBall!==null){
-      e.preventDefault();
-      pushHistory();
-      page().balls.splice(selectedBall,1);
-      selectedBall=null;
-      renderBalls();
-      save(false);
-      setStatus("Pallone eliminato");
-      return;
-    }
-    if(selectedDrawing!==null){
-      e.preventDefault();
-      pushHistory();
-      page().drawings.splice(selectedDrawing,1);
-      selectedDrawing=null;
-      renderDrawings();
-      save(false);
-      setStatus("Elemento grafico eliminato");
-      return;
-    }
-
-    if(selectedPlayers.size){
-      e.preventDefault();
-      pushHistory();
-
-      [...selectedPlayers].forEach(idx=>{
-        if(page().positions[idx])page().positions[idx]=null;
-      });
-
-      selectedPlayers.clear();
-      renderPlayers();
-      renderRoster();
-      refreshSelectionVisuals();
-      updateLineupCounters();
-      save(false);
-      updateLineupCounters();
-      setStatus("Giocatori rimossi dallo schema e restituiti alla lista");
-      return;
-    }
+  if((e.key==="Delete" || e.key==="Backspace") && !isEditableTarget(e.target)){
+    e.preventDefault();
+    deleteCurrentSelection();
+    return;
   }
 
   const mod=e.metaKey||e.ctrlKey;
@@ -5269,7 +5568,7 @@ function getBackupPayload(){
     format:"acf-set-pieces-backup",
     formatVersion:1,
     app:"ACF Fiorentina - Set Pieces App",
-    appVersion:"v114",
+    appVersion:"v115",
     createdAt:new Date().toISOString(),
     currentPage,
     state:JSON.parse(JSON.stringify(state)),
@@ -5496,6 +5795,106 @@ document.getElementById("backupFileInput").addEventListener("change",async e=>{
     }
   },true);
 })();
+
+
+let fieldLocked=false;
+let fieldViewMode=false;
+
+function updateFieldLockUI(){
+  document.body.classList.toggle("field-locked",fieldLocked);
+  const button=document.getElementById("touchLockBtn");
+  if(button){
+    button.classList.toggle("active",fieldLocked);
+    button.setAttribute("aria-pressed",String(fieldLocked));
+    button.textContent=fieldLocked ? "Sblocca" : "Blocca";
+  }
+}
+
+function toggleFieldLock(){
+  fieldLocked=!fieldLocked;
+  updateFieldLockUI();
+  setStatus(fieldLocked ? "Campo bloccato" : "Campo sbloccato");
+}
+
+function setFieldViewMode(enabled){
+  fieldViewMode=Boolean(enabled);
+  document.body.classList.toggle("field-view-mode",fieldViewMode);
+
+  requestAnimationFrame(()=>{
+    renderPlayers();
+    renderBalls();
+    renderTexts();
+    renderDrawings();
+  });
+}
+
+function toggleFieldViewMode(){
+  setFieldViewMode(!fieldViewMode);
+}
+
+document.getElementById("board").addEventListener("pointerdown",event=>{
+  if(!fieldLocked)return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+},true);
+
+document.getElementById("board").addEventListener("dblclick",event=>{
+  if(!fieldLocked)return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+},true);
+
+
+document.getElementById("touchCopyBtn").addEventListener("click",copyCurrentSelection);
+document.getElementById("touchPasteBtn").addEventListener("click",pasteClipboardSelection);
+document.getElementById("touchDeleteBtn").addEventListener("click",deleteCurrentSelection);
+
+document.getElementById("touchAlignHorizontalBtn").addEventListener(
+  "click",
+  alignSelectedHorizontally
+);
+document.getElementById("touchAlignVerticalBtn").addEventListener(
+  "click",
+  alignSelectedVertically
+);
+document.getElementById("touchDistributeBtn").addEventListener(
+  "click",
+  distributeSelectedHorizontally
+);
+
+document.getElementById("touchBringFrontBtn").addEventListener(
+  "click",
+  ()=>changeSelectedLayer("front")
+);
+document.getElementById("touchBringForwardBtn").addEventListener(
+  "click",
+  ()=>changeSelectedLayer("forward")
+);
+document.getElementById("touchSendBackwardBtn").addEventListener(
+  "click",
+  ()=>changeSelectedLayer("backward")
+);
+document.getElementById("touchSendBackBtn").addEventListener(
+  "click",
+  ()=>changeSelectedLayer("back")
+);
+
+document.getElementById("touchLockBtn").addEventListener("click",toggleFieldLock);
+document.getElementById("touchFullscreenBtn").addEventListener(
+  "click",
+  toggleFieldViewMode
+);
+document.getElementById("fieldFullscreenExitBtn").addEventListener(
+  "click",
+  ()=>setFieldViewMode(false)
+);
+
+document.addEventListener("keydown",event=>{
+  if(event.key==="Escape" && fieldViewMode){
+    event.preventDefault();
+    setFieldViewMode(false);
+  }
+});
 
 window.addEventListener("beforeunload",()=>save(false));
 load();renderAll();updateHistoryButtons();syncDrawingControls();updateSelectedNamesButton();syncChestCircleControls();

@@ -1,4 +1,4 @@
-ACF Fiorentina - Set Pieces App PWA v114
+ACF Fiorentina - Set Pieces App PWA v115
 
 COME USARLA SU IPAD
 1. Carica l'intera cartella su un hosting HTTPS.
@@ -14,3 +14,13 @@ IMPORTANTE
 - Backup e importazione restano locali sul dispositivo.
 - Le funzioni PNG/PDF dipendono dalle librerie esterne già richiamate nell'HTML:
   apri almeno una volta l'app con connessione prima di usarle offline.
+
+
+NOVITÀ v115
+- Barra touch sotto il campo
+- Copia, incolla ed elimina
+- Allineamento orizzontale e verticale
+- Distribuzione uniforme
+- Gestione livelli per oggetti grafici
+- Blocco modifiche
+- Modalità campo intero
