@@ -1607,7 +1607,7 @@ body.field-view-mode .field-fullscreen-nav:disabled{opacity:.28}
 <input type="file" id="projectFile" accept=".json" hidden>
 
 <script>
-const STORAGE_KEY="setPieceBoardPro_v126";
+const STORAGE_KEY="setPieceBoardPro_v127";
 
 function safeStorageGet(key){
   try{
@@ -5867,7 +5867,7 @@ function getBackupPayload(){
       "acf-set-pieces-backup"
     ],
     app:"ACF Fiorentina - Set Pieces App",
-    appVersion:"v126",
+    appVersion:"v127",
     createdAt:new Date().toISOString(),
     currentPage:Number(currentPage)||0,
     state:cloneBackupValue(state),
@@ -6608,8 +6608,77 @@ load();renderAll();updateHistoryButtons();syncDrawingControls();updateSelectedNa
 
 <script>
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./service-worker.js").catch(console.error);
+  window.addEventListener("load", async () => {
+    try {
+      const registration = await navigator.serviceWorker.register(
+        "./service-worker.js?v=127",
+        { updateViaCache: "none" }
+      );
+
+      let refreshing = false;
+
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (refreshing) return;
+        refreshing = true;
+
+        /*
+          Il nuovo service worker ha già preso il controllo:
+          salva prima lo stato corrente e ricarica una sola volta.
+        */
+        try {
+          if (typeof save === "function") save(false);
+          if (typeof saveArchive === "function") saveArchive();
+        } catch (_) {}
+
+        window.location.reload();
+      });
+
+      const askWaitingWorkerToActivate = () => {
+        if (registration.waiting) {
+          registration.waiting.postMessage({ type: "SKIP_WAITING" });
+        }
+      };
+
+      registration.addEventListener("updatefound", () => {
+        const installing = registration.installing;
+        if (!installing) return;
+
+        installing.addEventListener("statechange", () => {
+          if (
+            installing.state === "installed" &&
+            navigator.serviceWorker.controller
+          ) {
+            askWaitingWorkerToActivate();
+          }
+        });
+      });
+
+      askWaitingWorkerToActivate();
+
+      /*
+        Controlla automaticamente gli aggiornamenti:
+        - all'avvio;
+        - quando l'app torna in primo piano;
+        - ogni 5 minuti mentre resta aperta.
+      */
+      registration.update().catch(() => {});
+
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+          registration.update().catch(() => {});
+        }
+      });
+
+      window.addEventListener("focus", () => {
+        registration.update().catch(() => {});
+      });
+
+      setInterval(() => {
+        registration.update().catch(() => {});
+      }, 5 * 60 * 1000);
+    } catch (error) {
+      console.error("Service worker non disponibile:", error);
+    }
   });
 }
 </script>
