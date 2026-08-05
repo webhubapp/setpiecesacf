@@ -43,14 +43,14 @@ NOVITÀ v117
 - Allinea V rinominato in Verticale
 
 
-CORREZIONE v121 - POSIZIONI INVARIATE
+CORREZIONE v122 - POSIZIONI INVARIATE
 - Rapporto del campo fissato a 1000 × 620 su Mac, iPad e fullscreen
 - Nessuna deformazione passando tra dispositivi
 - Nessun riallargamento entrando in modalità Campo intero
 - Coordinate di giocatori, frecce, forme, palloni e testi mantenute in percentuale
 
 
-NOVITÀ v121
+NOVITÀ v122
 - Dimensione predefinita delle maglie: 90%
 - Trascinamento più fluido di pallone e testi
 - Stessa anagrafica completa per Fiorentina e avversari
@@ -59,8 +59,16 @@ NOVITÀ v121
 - Controllo completo della sintassi JavaScript
 
 
-NOVITÀ v121
+NOVITÀ v122
 - Nuovo sfondo del campo basato sull'immagine campo.png
 - Vecchie linee CSS del campo disattivate
 - Coordinate e posizioni degli oggetti mantenute invariate
 - Compatibilità Mac, iPad, fullscreen, PNG e PDF
+
+
+NOVITÀ v122
+- Movimento pallone più fluido su Mac e iPad
+- Movimento testo più fluido su Mac e iPad
+- Eliminati i rerender durante il trascinamento
+- Pointer capture e requestAnimationFrame per un drag stabile
+- Bloccato lo scorrimento involontario della pagina durante il drag

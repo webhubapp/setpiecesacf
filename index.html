@@ -1119,6 +1119,21 @@ body.field-locked #board::after{
   display:none!important;
 }
 
+
+.ball,
+.tactical-text{
+  touch-action:none!important;
+  -webkit-user-select:none;
+  user-select:none;
+  will-change:left,top;
+  transform:translate(-50%,-50%) translateZ(0);
+}
+.ball.drag-active,
+.tactical-text.drag-active{
+  transition:none!important;
+  cursor:grabbing;
+}
+
 </style>
 
 <script async src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -1503,7 +1518,7 @@ body.field-locked #board::after{
 <input type="file" id="projectFile" accept=".json" hidden>
 
 <script>
-const STORAGE_KEY="setPieceBoardPro_v121";
+const STORAGE_KEY="setPieceBoardPro_v122";
 
 function safeStorageGet(key){
   try{
@@ -2986,16 +3001,18 @@ function renderBalls(){
         selectedRosterPlayers.clear();
         selectedTexts.clear();
         selectedDrawings.clear();
+        selectedBalls.clear();
       }
-      toggleSetSelection(selectedBalls,i,additive);
+      if(additive && selectedBalls.has(i))selectedBalls.delete(i);
+      else selectedBalls.add(i);
+
       selectedBall=i;
       selectedDrawing=null;
       selectedText=null;
+
       refreshSelectionVisuals();
-      renderDrawings();
-      renderTexts();
-      renderBalls();
       refreshObjectSelectionVisuals();
+      el.classList.add("selected","selected-object");
 
       const board=document.getElementById("board");
       const rect=board.getBoundingClientRect();
@@ -3005,32 +3022,36 @@ function renderBalls(){
       dragSnapshot=snapshotState();
       beginDragVisual(el,pointerId);
 
-      const updater=makeSmoothDragFrame(ev=>{
+      const updater=createRafDragUpdater(ev=>{
         ball.x=Math.max(1.5,Math.min(98.5,initial.x+(ev.clientX-start.x)/rect.width*100));
         ball.y=Math.max(2,Math.min(98,initial.y+(ev.clientY-start.y)/rect.height*100));
         el.style.left=ball.x+"%";
         el.style.top=ball.y+"%";
-        el.style.transform="translate(-50%,-50%)";
       });
 
-      const move=ev=>updater.move(ev);
+      const move=ev=>{
+        if(ev.pointerId!==pointerId)return;
+        ev.preventDefault();
+        updater.schedule(ev);
+      };
+
       const finish=ev=>{
+        if(ev.pointerId!==pointerId)return;
+
         updater.flush();
         window.removeEventListener("pointermove",move);
         window.removeEventListener("pointerup",finish);
         window.removeEventListener("pointercancel",finish);
 
-        ball.x=Math.max(1.5,Math.min(98.5,initial.x+(ev.clientX-start.x)/rect.width*100));
-        ball.y=Math.max(2,Math.min(98,initial.y+(ev.clientY-start.y)/rect.height*100));
-
         endDragVisual(el,pointerId);
-        renderBalls();
         commitDragHistory();
+        refreshObjectSelectionVisuals();
+        save(false);
       };
 
-      window.addEventListener("pointermove",move,{passive:true});
-      window.addEventListener("pointerup",finish,{once:true});
-      window.addEventListener("pointercancel",finish,{once:true});
+      window.addEventListener("pointermove",move,{passive:false});
+      window.addEventListener("pointerup",finish);
+      window.addEventListener("pointercancel",finish);
     });
 
     layer.appendChild(el);
@@ -3079,19 +3100,18 @@ el.addEventListener("pointerdown",e=>{
         selectedRosterPlayers.clear();
         selectedBalls.clear();
         selectedDrawings.clear();
+        selectedTexts.clear();
       }
-      toggleSetSelection(selectedTexts,i,additive);
+      if(additive && selectedTexts.has(i))selectedTexts.delete(i);
+      else selectedTexts.add(i);
+
       selectedText=i;
       selectedDrawing=null;
       selectedBall=null;
 
       refreshSelectionVisuals();
-      renderRoster();
-      renderPlayers();
-      renderBalls();
-      renderDrawings();
-      renderTexts();
       refreshObjectSelectionVisuals();
+      el.classList.add("selected","selected-object");
 
       const board=document.getElementById("board");
       const rect=board.getBoundingClientRect();
@@ -3101,32 +3121,36 @@ el.addEventListener("pointerdown",e=>{
       dragSnapshot=snapshotState();
       beginDragVisual(el,pointerId);
 
-      const updater=makeSmoothDragFrame(ev=>{
+      const updater=createRafDragUpdater(ev=>{
         item.x=Math.max(1,Math.min(99,initial.x+(ev.clientX-start.x)/rect.width*100));
         item.y=Math.max(2,Math.min(98,initial.y+(ev.clientY-start.y)/rect.height*100));
         el.style.left=item.x+"%";
         el.style.top=item.y+"%";
-        el.style.transform="translate(-50%,-50%)";
       });
 
-      const move=ev=>updater.move(ev);
+      const move=ev=>{
+        if(ev.pointerId!==pointerId)return;
+        ev.preventDefault();
+        updater.schedule(ev);
+      };
+
       const finish=ev=>{
+        if(ev.pointerId!==pointerId)return;
+
         updater.flush();
         window.removeEventListener("pointermove",move);
         window.removeEventListener("pointerup",finish);
         window.removeEventListener("pointercancel",finish);
 
-        item.x=Math.max(1,Math.min(99,initial.x+(ev.clientX-start.x)/rect.width*100));
-        item.y=Math.max(2,Math.min(98,initial.y+(ev.clientY-start.y)/rect.height*100));
-
         endDragVisual(el,pointerId);
-        renderTexts();
         commitDragHistory();
+        refreshObjectSelectionVisuals();
+        save(false);
       };
 
-      window.addEventListener("pointermove",move,{passive:true});
-      window.addEventListener("pointerup",finish,{once:true});
-      window.addEventListener("pointercancel",finish,{once:true});
+      window.addEventListener("pointermove",move,{passive:false});
+      window.addEventListener("pointerup",finish);
+      window.addEventListener("pointercancel",finish);
     });
 
     layer.appendChild(el);
@@ -5604,7 +5628,7 @@ function getBackupPayload(){
       "acf-set-pieces-backup"
     ],
     app:"ACF Fiorentina - Set Pieces App",
-    appVersion:"v121",
+    appVersion:"v122",
     createdAt:new Date().toISOString(),
     currentPage:Number(currentPage)||0,
     state:cloneBackupValue(state),
