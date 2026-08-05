@@ -1216,14 +1216,16 @@ body.field-locked #board::after{
   </div>
 
   <div class="touch-command-bar" id="touchCommandBar" aria-label="Comandi rapidi">
+    <button type="button" class="touch-command" id="touchUndoBtn" title="Torna indietro">Torna indietro</button>
+    <span class="touch-command-divider"></span>
     <button type="button" class="touch-command" id="touchCopyBtn" title="Copia selezione">Copia</button>
     <button type="button" class="touch-command" id="touchPasteBtn" title="Incolla selezione">Incolla</button>
     <button type="button" class="touch-command danger" id="touchDeleteBtn" title="Elimina o rimuovi la selezione">Elimina</button>
 
     <span class="touch-command-divider"></span>
 
-    <button type="button" class="touch-command" id="touchAlignHorizontalBtn" title="Allinea orizzontalmente">Allinea H</button>
-    <button type="button" class="touch-command" id="touchAlignVerticalBtn" title="Allinea verticalmente">Allinea V</button>
+    <button type="button" class="touch-command" id="touchAlignHorizontalBtn" title="Allinea orizzontalmente">Orizzontale</button>
+    <button type="button" class="touch-command" id="touchAlignVerticalBtn" title="Allinea verticalmente">Verticale</button>
     <button type="button" class="touch-command" id="touchDistributeBtn" title="Distribuisci uniformemente">Distribuisci</button>
 
     <span class="touch-command-divider"></span>
@@ -1463,7 +1465,7 @@ body.field-locked #board::after{
 <input type="file" id="projectFile" accept=".json" hidden>
 
 <script>
-const STORAGE_KEY="setPieceBoardPro_v116";
+const STORAGE_KEY="setPieceBoardPro_v117";
 
 function safeStorageGet(key){
   try{
@@ -5580,7 +5582,7 @@ function getBackupPayload(){
       "acf-set-pieces-backup"
     ],
     app:"ACF Fiorentina - Set Pieces App",
-    appVersion:"v116",
+    appVersion:"v117",
     createdAt:new Date().toISOString(),
     currentPage:Number(currentPage)||0,
     state:cloneBackupValue(state),
@@ -6198,6 +6200,7 @@ document.getElementById("board").addEventListener("dblclick",event=>{
 },true);
 
 
+document.getElementById("touchUndoBtn").addEventListener("click",undo);
 document.getElementById("touchCopyBtn").addEventListener("click",copyCurrentSelection);
 document.getElementById("touchPasteBtn").addEventListener("click",pasteClipboardSelection);
 document.getElementById("touchDeleteBtn").addEventListener("click",deleteCurrentSelection);
