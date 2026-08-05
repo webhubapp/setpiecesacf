@@ -2023,7 +2023,7 @@ body.field-view-mode #board{
 <input type="file" id="projectFile" accept=".json" hidden>
 
 <script>
-const STORAGE_KEY="setPieceBoardPro_v146";
+const STORAGE_KEY="setPieceBoardPro_v147";
 
 function safeStorageGet(key){
   try{
@@ -3294,10 +3294,11 @@ function renderPlayers(){
         <path d="${jerseyPath}" fill="url(#${gradientId})"/>`;
     }
 
-    const effectiveShowCircle=
-      state.presentationMode==="locker"
-        ? false
-        : true;
+    const effectiveShowCircle=getEffectivePlayerDisplayValue(
+      i,
+      "showChestCircle",
+      pl.showChestCircle!==false
+    );
 
     const chestCircle=effectiveShowCircle
       ?'<circle cx="28" cy="29" r="14.5" fill="#ffffff"/>'
@@ -3485,6 +3486,7 @@ function applyGlobalPlayerDisplayMode(mode){
         const override=projectPage.playerDisplayOverrides[key]||{};
 
         override.showShirtNumber=normalizedMode==="bench";
+        override.showChestCircle=normalizedMode==="bench";
         projectPage.playerDisplayOverrides[key]=override;
       });
     });
@@ -6241,10 +6243,20 @@ document.addEventListener("click",e=>{
 
 
 function getSelectedTeamPlayers(team){
-  return [...selectedPlayers].filter(i=>
-    page().positions[i] &&
-    state.roster[i] &&
-    (team==="home" ? state.roster[i].team!=="away" : state.roster[i].team==="away")
+  const indexes=new Set();
+
+  selectedPlayers.forEach(index=>{
+    if(state.roster[index])indexes.add(index);
+  });
+
+  selectedRosterPlayers.forEach(index=>{
+    if(state.roster[index])indexes.add(index);
+  });
+
+  return [...indexes].filter(index=>
+    team==="home"
+      ? state.roster[index].team!=="away"
+      : state.roster[index].team==="away"
   );
 }
 
@@ -6256,28 +6268,47 @@ function syncChestCircleControls(){
   const selectedAway=getSelectedTeamPlayers("away");
 
   if(home){
+    const homeValues=selectedHome.map(index=>
+      getEffectivePlayerDisplayValue(
+        index,
+        "showChestCircle",
+        state.roster[index].showChestCircle!==false
+      )
+    );
+
     home.checked=selectedHome.length
-      ? selectedHome.every(i=>state.roster[i].showChestCircle!==false)
+      ? homeValues.every(Boolean)
       : state.homeChestCircle!==false;
-    home.indeterminate=selectedHome.length>1 &&
-      !selectedHome.every(i=>state.roster[i].showChestCircle===selectedHome[0] && state.roster[i].showChestCircle===true) &&
-      selectedHome.some(i=>state.roster[i].showChestCircle!==false) &&
-      selectedHome.some(i=>state.roster[i].showChestCircle===false);
+
+    home.indeterminate=
+      selectedHome.length>1 &&
+      homeValues.some(Boolean) &&
+      homeValues.some(value=>!value);
     home.title=selectedHome.length
       ? `Applica ai ${selectedHome.length} giocatori Fiorentina selezionati`
-      : "Nessun giocatore Fiorentina selezionato: imposta il valore predefinito";
+      : "Seleziona giocatori Fiorentina nel campo o nella lista; senza selezione imposta il predefinito";
   }
 
   if(away){
+    const awayValues=selectedAway.map(index=>
+      getEffectivePlayerDisplayValue(
+        index,
+        "showChestCircle",
+        state.roster[index].showChestCircle===true
+      )
+    );
+
     away.checked=selectedAway.length
-      ? selectedAway.every(i=>state.roster[i].showChestCircle===true)
+      ? awayValues.every(Boolean)
       : state.awayChestCircle===true;
-    away.indeterminate=selectedAway.length>1 &&
-      selectedAway.some(i=>state.roster[i].showChestCircle===true) &&
-      selectedAway.some(i=>state.roster[i].showChestCircle!==true);
+
+    away.indeterminate=
+      selectedAway.length>1 &&
+      awayValues.some(Boolean) &&
+      awayValues.some(value=>!value);
     away.title=selectedAway.length
       ? `Applica ai ${selectedAway.length} avversari selezionati`
-      : "Nessun avversario selezionato: imposta il valore predefinito";
+      : "Seleziona avversari nel campo o nella lista; senza selezione imposta il predefinito";
   }
 }
 
@@ -6286,10 +6317,14 @@ document.getElementById("homeChestCircleToggle").addEventListener("change",e=>{
   pushHistory();
 
   if(ids.length){
-    ids.forEach(i=>state.roster[i].showChestCircle=e.target.checked);
+    ids.forEach(index=>{
+      const override=getPlayerDisplayOverride(index);
+      override.showChestCircle=e.target.checked;
+    });
+
     setStatus(e.target.checked
-      ? `Cerchio attivato su ${ids.length} giocatore/i Fiorentina`
-      : `Cerchio nascosto su ${ids.length} giocatore/i Fiorentina`);
+      ? `Cerchio attivato su ${ids.length} giocatore/i Fiorentina nello schema corrente`
+      : `Cerchio nascosto su ${ids.length} giocatore/i Fiorentina nello schema corrente`);
   }else{
     state.homeChestCircle=e.target.checked;
     setStatus(state.homeChestCircle
@@ -6309,10 +6344,14 @@ document.getElementById("awayChestCircleToggle").addEventListener("change",e=>{
   pushHistory();
 
   if(ids.length){
-    ids.forEach(i=>state.roster[i].showChestCircle=e.target.checked);
+    ids.forEach(index=>{
+      const override=getPlayerDisplayOverride(index);
+      override.showChestCircle=e.target.checked;
+    });
+
     setStatus(e.target.checked
-      ? `Cerchio attivato su ${ids.length} avversario/i`
-      : `Cerchio nascosto su ${ids.length} avversario/i`);
+      ? `Cerchio attivato su ${ids.length} avversario/i nello schema corrente`
+      : `Cerchio nascosto su ${ids.length} avversario/i nello schema corrente`);
   }else{
     state.awayChestCircle=e.target.checked;
     setStatus(state.awayChestCircle
@@ -6422,7 +6461,7 @@ function getBackupPayload(){
       "acf-set-pieces-backup"
     ],
     app:"ACF Fiorentina - Set Pieces App",
-    appVersion:"v146",
+    appVersion:"v147",
     createdAt:new Date().toISOString(),
     currentPage:Number(currentPage)||0,
     state:cloneBackupValue(state),

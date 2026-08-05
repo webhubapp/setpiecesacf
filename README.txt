@@ -262,3 +262,12 @@ FIX v146
 - Eliminato il nome duplicato João João Mário
 - Ripuliti i riferimenti residui a pulsanti Undo/Redo inesistenti
 - Controllo sintassi JavaScript completato
+
+
+FIX v147
+- Ripristinato il funzionamento dei due flag Cerchio bianco
+- Funzionano in PANCHINA, SPOGLIATOIO e PREPARAZIONE
+- Selezione supportata sia dal campo sia dalla lista laterale
+- Modifica applicata soltanto allo schema corrente quando ci sono giocatori selezionati
+- Senza selezione, il flag aggiorna il valore predefinito della squadra
+- PANCHINA e SPOGLIATOIO continuano a impostare la base globale su tutti gli schemi
