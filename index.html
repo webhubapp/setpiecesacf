@@ -1228,16 +1228,7 @@ body.field-locked #board::after{
     <button type="button" class="touch-command" id="touchAlignVerticalBtn" title="Allinea verticalmente">Verticale</button>
     <button type="button" class="touch-command" id="touchDistributeBtn" title="Distribuisci uniformemente">Distribuisci</button>
 
-    <span class="touch-command-divider"></span>
-
-    <button type="button" class="touch-command compact" id="touchBringFrontBtn" title="Porta in primo piano">Primo piano</button>
-    <button type="button" class="touch-command compact" id="touchBringForwardBtn" title="Porta avanti">Avanti</button>
-    <button type="button" class="touch-command compact" id="touchSendBackwardBtn" title="Porta indietro">Indietro</button>
-    <button type="button" class="touch-command compact" id="touchSendBackBtn" title="Porta sullo sfondo">Sfondo</button>
-
-    <span class="touch-command-divider"></span>
-
-    <button type="button" class="touch-command" id="touchLockBtn" aria-pressed="false" title="Blocca modifiche sul campo">Blocca</button>
+    <span class="touch-command-divider"></span><button type="button" class="touch-command" id="touchLockBtn" aria-pressed="false" title="Blocca modifiche sul campo">Blocca</button>
     <button type="button" class="touch-command primary" id="touchFullscreenBtn" title="Mostra solo il campo">Campo intero</button>
   </div>
 
@@ -1465,7 +1456,7 @@ body.field-locked #board::after{
 <input type="file" id="projectFile" accept=".json" hidden>
 
 <script>
-const STORAGE_KEY="setPieceBoardPro_v117";
+const STORAGE_KEY="setPieceBoardPro_v118";
 
 function safeStorageGet(key){
   try{
@@ -5582,7 +5573,7 @@ function getBackupPayload(){
       "acf-set-pieces-backup"
     ],
     app:"ACF Fiorentina - Set Pieces App",
-    appVersion:"v117",
+    appVersion:"v118",
     createdAt:new Date().toISOString(),
     currentPage:Number(currentPage)||0,
     state:cloneBackupValue(state),
@@ -6216,23 +6207,6 @@ document.getElementById("touchAlignVerticalBtn").addEventListener(
 document.getElementById("touchDistributeBtn").addEventListener(
   "click",
   distributeSelectedHorizontally
-);
-
-document.getElementById("touchBringFrontBtn").addEventListener(
-  "click",
-  ()=>changeSelectedLayer("front")
-);
-document.getElementById("touchBringForwardBtn").addEventListener(
-  "click",
-  ()=>changeSelectedLayer("forward")
-);
-document.getElementById("touchSendBackwardBtn").addEventListener(
-  "click",
-  ()=>changeSelectedLayer("backward")
-);
-document.getElementById("touchSendBackBtn").addEventListener(
-  "click",
-  ()=>changeSelectedLayer("back")
 );
 
 document.getElementById("touchLockBtn").addEventListener("click",toggleFieldLock);
