@@ -1288,6 +1288,50 @@ body.field-view-mode #board{
   transform-origin:top left!important;
 }
 
+
+.presentation-mode-actions{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  min-width:0;
+}
+.presentation-mode-btn{
+  min-width:108px;
+  min-height:36px;
+  padding:7px 12px;
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.06em;
+  white-space:nowrap;
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+}
+.presentation-mode-btn.bench{
+  border-color:#49647f;
+  background:#16283a;
+}
+.presentation-mode-btn.dressing-room{
+  border-color:#615076;
+  background:#2a2038;
+}
+.presentation-mode-btn.active{
+  border-color:#9be85d!important;
+  background:#8bd450!important;
+  color:#071008!important;
+  box-shadow:0 0 0 2px rgba(139,212,80,.2);
+}
+@media(max-width:1100px){
+  .presentation-mode-actions{
+    gap:5px;
+  }
+  .presentation-mode-btn{
+    min-width:92px;
+    padding-inline:9px;
+    font-size:10px;
+  }
+}
+
 </style>
 
 <script async src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -1412,7 +1456,11 @@ body.field-view-mode #board{
 <section class="field-wrap">
   <div class="canvas-header">
     <div class="current-title" id="currentTitle">Schema 1</div>
-    <button type="button" class="btn substitution-launch-btn" id="openSubstitutionBtn">Sostituzione</button>
+    <div class="presentation-mode-actions" aria-label="Modalità visualizzazione giocatori">
+      <button type="button" class="btn presentation-mode-btn bench" id="benchModeBtn">PANCHINA</button>
+      <button type="button" class="btn substitution-launch-btn" id="openSubstitutionBtn">Sostituzione</button>
+      <button type="button" class="btn presentation-mode-btn dressing-room" id="dressingRoomModeBtn">SPOGLIATOIO</button>
+    </div>
     <div class="status" id="status">Pronto</div>
     <div class="lineup-counters" aria-label="Giocatori in campo">
       <div class="lineup-counter home" id="homeLineupCount">0/11</div>
@@ -1682,7 +1730,7 @@ body.field-view-mode #board{
 <input type="file" id="projectFile" accept=".json" hidden>
 
 <script>
-const STORAGE_KEY="setPieceBoardPro_v132";
+const STORAGE_KEY="setPieceBoardPro_v133";
 
 function safeStorageGet(key){
   try{
@@ -2984,6 +3032,8 @@ function renderPlayers(){
     el.addEventListener("pointerdown",handlePlayerPointerDown);
     layer.appendChild(el);
   });
+
+  updatePresentationModeButtons();
 }
 
 function clearObjectSelections(){
@@ -3024,6 +3074,75 @@ function clearAllSelections(){
 }
 
 
+
+
+function updatePresentationModeButtons(){
+  const bench=document.getElementById("benchModeBtn");
+  const dressing=document.getElementById("dressingRoomModeBtn");
+
+  const players=state.roster||[];
+
+  const isBench=
+    players.length>0 &&
+    players.every(player=>
+      player.showLastName!==false &&
+      player.showChestCircle!==false &&
+      player.showShirtNumber===true &&
+      player.showOpponentBlankLine!==true
+    );
+
+  const isDressingRoom=
+    players.length>0 &&
+    players.every(player=>
+      player.showLastName===false &&
+      player.showChestCircle!==false &&
+      player.showShirtNumber!==true &&
+      player.showOpponentBlankLine!==true
+    );
+
+  bench?.classList.toggle("active",isBench);
+  dressing?.classList.toggle("active",isDressingRoom);
+}
+
+function applyGlobalPlayerDisplayMode(mode){
+  if(!Array.isArray(state.roster)||!state.roster.length){
+    setStatus("La rosa è vuota");
+    return;
+  }
+
+  pushHistory();
+
+  state.roster.forEach(player=>{
+    /*
+      Entrambe le modalità mantengono sempre il cerchio bianco.
+      Le linee degli avversari vengono disattivate perché PANCHINA
+      deve mostrare il cognome e SPOGLIATOIO deve lasciare solo il cerchio.
+    */
+    player.showChestCircle=true;
+    player.showOpponentBlankLine=false;
+
+    if(mode==="bench"){
+      player.showLastName=true;
+      player.showShirtNumber=true;
+    }else{
+      player.showLastName=false;
+      player.showShirtNumber=false;
+    }
+  });
+
+  updateHomeRosterTemplate();
+  renderPlayers();
+  renderRoster();
+  syncRosterDisplayOptions();
+  updatePresentationModeButtons();
+  save(false);
+
+  setStatus(
+    mode==="bench"
+      ? "Modalità PANCHINA: nome, cerchio e numero visibili"
+      : "Modalità SPOGLIATOIO: visibile soltanto il cerchio bianco"
+  );
+}
 
 function getNameVisibilitySelection(){
   const indexes=new Set();
@@ -4119,6 +4238,8 @@ function renderAll(){
   updateSubstitutionButton();
 
   syncRosterDisplayOptions();
+
+  updatePresentationModeButtons();
 }
 
 
@@ -5942,7 +6063,7 @@ function getBackupPayload(){
       "acf-set-pieces-backup"
     ],
     app:"ACF Fiorentina - Set Pieces App",
-    appVersion:"v132",
+    appVersion:"v133",
     createdAt:new Date().toISOString(),
     currentPage:Number(currentPage)||0,
     state:cloneBackupValue(state),
@@ -6798,6 +6919,17 @@ document.getElementById("opponentBlankLine").addEventListener("change",event=>{
       : "Linea nascosta negli avversari selezionati"
   );
 });
+
+
+document.getElementById("benchModeBtn").addEventListener(
+  "click",
+  ()=>applyGlobalPlayerDisplayMode("bench")
+);
+
+document.getElementById("dressingRoomModeBtn").addEventListener(
+  "click",
+  ()=>applyGlobalPlayerDisplayMode("dressingRoom")
+);
 
 document.getElementById("touchUndoBtn").addEventListener("click",undo);
 document.getElementById("touchCopyBtn").addEventListener("click",copyCurrentSelection);
