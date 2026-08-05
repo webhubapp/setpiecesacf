@@ -63,8 +63,8 @@ button{cursor:pointer}
 }
 #board{
   position:absolute;
-  left:50%;
-  top:50%;
+  left:0;
+  top:0;
   width:1000px!important;
   height:620px!important;
   min-width:1000px!important;
@@ -72,7 +72,7 @@ button{cursor:pointer}
   max-width:1000px!important;
   max-height:620px!important;
   aspect-ratio:auto!important;
-  transform-origin:center center!important;
+  transform-origin:top left!important;
   touch-action:none;
   user-select:none;
   -webkit-user-select:none;
@@ -1065,8 +1065,8 @@ body.field-view-mode .board-shell{
 }
 body.field-view-mode #board{
   position:absolute!important;
-  left:50%!important;
-  top:50%!important;
+  left:0;
+  top:0;
   inset:auto!important;
   width:1000px!important;
   height:620px!important;
@@ -1077,7 +1077,7 @@ body.field-view-mode #board{
   aspect-ratio:auto!important;
   flex:none!important;
   overflow:hidden!important;
-  transform-origin:center center!important;
+  transform-origin:top left!important;
 }
 body.field-view-mode .field-fullscreen-exit{
   display:block;
@@ -1243,6 +1243,15 @@ body.field-view-mode .field-fullscreen-nav:disabled{opacity:.28}
 #drawingDash{
   accent-color:#f6c400;
   touch-action:manipulation;
+}
+
+
+/* v129: viewport stabile, nessuna centratura tramite translate */
+#board{
+  transform-origin:top left!important;
+}
+body.field-view-mode .board-shell{
+  isolation:isolate;
 }
 
 </style>
@@ -1639,7 +1648,7 @@ body.field-view-mode .field-fullscreen-nav:disabled{opacity:.28}
 <input type="file" id="projectFile" accept=".json" hidden>
 
 <script>
-const STORAGE_KEY="setPieceBoardPro_v128";
+const STORAGE_KEY="setPieceBoardPro_v129";
 
 function safeStorageGet(key){
   try{
@@ -5899,7 +5908,7 @@ function getBackupPayload(){
       "acf-set-pieces-backup"
     ],
     app:"ACF Fiorentina - Set Pieces App",
-    appVersion:"v128",
+    appVersion:"v129",
     createdAt:new Date().toISOString(),
     currentPage:Number(currentPage)||0,
     state:cloneBackupValue(state),
@@ -6500,25 +6509,34 @@ function fitLogicalBoard(){
   if(!shell||!board)return;
 
   const styles=getComputedStyle(shell);
+  const paddingLeft=parseFloat(styles.paddingLeft)||0;
+  const paddingRight=parseFloat(styles.paddingRight)||0;
+  const paddingTop=parseFloat(styles.paddingTop)||0;
+  const paddingBottom=parseFloat(styles.paddingBottom)||0;
+
   const availableWidth=Math.max(
     1,
-    shell.clientWidth-
-    (parseFloat(styles.paddingLeft)||0)-
-    (parseFloat(styles.paddingRight)||0)
+    shell.clientWidth-paddingLeft-paddingRight
   );
   const availableHeight=Math.max(
     1,
-    shell.clientHeight-
-    (parseFloat(styles.paddingTop)||0)-
-    (parseFloat(styles.paddingBottom)||0)
+    shell.clientHeight-paddingTop-paddingBottom
   );
 
   const scaleX=availableWidth/BOARD_LOGICAL_WIDTH;
   const scaleY=availableHeight/BOARD_LOGICAL_HEIGHT;
 
   boardRenderScale=Math.max(.05,Math.min(scaleX,scaleY));
-  board.style.transform=
-    `translate(-50%,-50%) scale(${boardRenderScale})`;
+
+  const renderedWidth=BOARD_LOGICAL_WIDTH*boardRenderScale;
+  const renderedHeight=BOARD_LOGICAL_HEIGHT*boardRenderScale;
+
+  const left=paddingLeft+(availableWidth-renderedWidth)/2;
+  const top=paddingTop+(availableHeight-renderedHeight)/2;
+
+  board.style.left=`${Math.max(paddingLeft,left)}px`;
+  board.style.top=`${Math.max(paddingTop,top)}px`;
+  board.style.transform=`scale(${boardRenderScale})`;
 }
 
 function scheduleLogicalBoardFit(){
@@ -6539,16 +6557,21 @@ function installLogicalBoardRenderer(){
     observer.observe(shell);
   }
 
-  window.addEventListener("resize",scheduleLogicalBoardFit,{passive:true});
+  window.addEventListener(
+    "resize",
+    scheduleLogicalBoardFit,
+    {passive:true}
+  );
 
   window.addEventListener("orientationchange",()=>{
-    setTimeout(scheduleLogicalBoardFit,80);
-    setTimeout(scheduleLogicalBoardFit,350);
+    setTimeout(scheduleLogicalBoardFit,60);
+    setTimeout(scheduleLogicalBoardFit,220);
+    setTimeout(scheduleLogicalBoardFit,500);
   },{passive:true});
 
   document.addEventListener("visibilitychange",()=>{
     if(document.visibilityState==="visible"){
-      scheduleLogicalBoardFit();
+      setTimeout(scheduleLogicalBoardFit,40);
     }
   });
 
