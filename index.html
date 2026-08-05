@@ -1427,7 +1427,7 @@ body.field-view-mode #board{
   flex-wrap:nowrap!important;
   min-width:0!important;
 }
-.substitution-launch-btn.substitution-separated{
+.substitution-launch-btn.substitution-separated-obsolete{
   grid-column:3!important;
   justify-self:start!important;
   margin:0!important;
@@ -1452,7 +1452,7 @@ body.field-view-mode #board{
     padding-inline:7px!important;
     font-size:9px!important;
   }
-  .substitution-launch-btn.substitution-separated{
+  .substitution-launch-btn.substitution-separated-obsolete{
     min-width:122px!important;
     padding-inline:10px!important;
     font-size:10px!important;
@@ -1481,9 +1481,75 @@ body.field-view-mode #board{
   .presentation-mode-actions::-webkit-scrollbar{
     display:none!important;
   }
-  .substitution-launch-btn.substitution-separated{
+  .substitution-launch-btn.substitution-separated-obsolete{
     grid-area:substitution!important;
     justify-self:end!important;
+  }
+}
+
+
+/* v140: Sostituzione in riga autonoma, impossibile da sovrapporre */
+.canvas-header{
+  display:grid!important;
+  grid-template-columns:minmax(160px,1fr) auto minmax(120px,1fr)!important;
+  align-items:center!important;
+  column-gap:18px!important;
+  padding-inline:14px!important;
+}
+.canvas-header .current-title{
+  grid-column:1!important;
+}
+.presentation-mode-actions{
+  grid-column:2!important;
+}
+.canvas-header .lineup-counters{
+  grid-column:3!important;
+  justify-self:end!important;
+}
+.substitution-row{
+  width:100%;
+  min-height:48px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:6px 12px;
+  background:#24272b;
+  border-top:1px solid #333a42;
+  border-bottom:1px solid #333a42;
+  box-sizing:border-box;
+}
+.substitution-launch-btn.substitution-dedicated{
+  position:static!important;
+  margin:0!important;
+  min-width:180px!important;
+  max-width:260px!important;
+  width:auto!important;
+  flex:0 0 auto!important;
+  z-index:auto!important;
+}
+@media(max-width:980px){
+  .canvas-header{
+    grid-template-columns:1fr auto!important;
+    grid-template-areas:
+      "title counters"
+      "modes modes"!important;
+    row-gap:8px!important;
+  }
+  .canvas-header .current-title{grid-area:title!important}
+  .canvas-header .lineup-counters{grid-area:counters!important}
+  .presentation-mode-actions{
+    grid-area:modes!important;
+    justify-content:center!important;
+    overflow-x:auto!important;
+    scrollbar-width:none!important;
+  }
+  .presentation-mode-actions::-webkit-scrollbar{display:none!important}
+  .substitution-row{
+    min-height:44px;
+    padding-block:5px;
+  }
+  .substitution-launch-btn.substitution-dedicated{
+    min-width:150px!important;
   }
 }
 
@@ -1616,7 +1682,6 @@ body.field-view-mode #board{
       <button type="button" class="btn presentation-mode-btn dressing-room" id="dressingRoomModeBtn">SPOGLIATOIO</button>
       <button type="button" class="btn presentation-mode-btn preparation" id="preparationModeBtn">PREPARAZIONE</button>
     </div>
-    <button type="button" class="btn substitution-launch-btn substitution-separated" id="openSubstitutionBtn">Sostituzione</button>
     <div class="status" id="status" aria-live="polite"></div>
     <div class="lineup-counters" aria-label="Giocatori in campo">
       <div class="lineup-counter home" id="homeLineupCount">0/11</div>
@@ -1624,6 +1689,11 @@ body.field-view-mode #board{
       <div class="lineup-counter away" id="awayLineupCount">0/11</div>
     </div>
   </div>
+
+  <div class="substitution-row">
+    <button type="button" class="btn substitution-launch-btn substitution-dedicated" id="openSubstitutionBtn">Sostituzione</button>
+  </div>
+
   <div class="board-shell">
     <button type="button" class="field-fullscreen-exit" id="fieldFullscreenExitBtn" title="Esci dalla modalità campo intero">×</button>
     <button type="button" class="field-fullscreen-nav prev" id="fieldPrevSchemeBtn" title="Schema precedente">‹</button>
@@ -1886,7 +1956,7 @@ body.field-view-mode #board{
 <input type="file" id="projectFile" accept=".json" hidden>
 
 <script>
-const STORAGE_KEY="setPieceBoardPro_v139";
+const STORAGE_KEY="setPieceBoardPro_v140";
 
 function safeStorageGet(key){
   try{
@@ -6279,7 +6349,7 @@ function getBackupPayload(){
       "acf-set-pieces-backup"
     ],
     app:"ACF Fiorentina - Set Pieces App",
-    appVersion:"v139",
+    appVersion:"v140",
     createdAt:new Date().toISOString(),
     currentPage:Number(currentPage)||0,
     state:cloneBackupValue(state),
