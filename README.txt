@@ -1,4 +1,4 @@
-ACF Fiorentina - Set Pieces App PWA v117
+ACF Fiorentina - Set Pieces App PWA v119
 
 COME USARLA SU IPAD
 1. Carica l'intera cartella su un hosting HTTPS.
@@ -16,7 +16,7 @@ IMPORTANTE
   apri almeno una volta l'app con connessione prima di usarle offline.
 
 
-NOVITÀ v117
+NOVITÀ v119
 - Barra touch sotto il campo
 - Copia, incolla ed elimina
 - Allineamento orizzontale e verticale
@@ -26,7 +26,7 @@ NOVITÀ v117
 - Modalità campo intero
 
 
-NOVITÀ v117 - BACKUP UNIVERSALE
+NOVITÀ v119 - BACKUP UNIVERSALE
 - Nuovo formato .acf compatibile con Mac, iPad, Safari e Chrome
 - Importazione di .acf, .setpieces, .acfbackup, .json e .txt
 - Compatibilità con tutti i backup precedenti
@@ -37,7 +37,13 @@ NOVITÀ v117 - BACKUP UNIVERSALE
 - Messaggi di errore dettagliati
 
 
-NOVITÀ v117
+NOVITÀ v119
 - Pulsante Torna indietro, equivalente a Command+Z
 - Allinea H rinominato in Orizzontale
 - Allinea V rinominato in Verticale
+
+
+CORREZIONI v119
+- Riparato errore JavaScript della v118
+- Ripristinati tutti i pulsanti su iPad e computer
+- Rimossi correttamente Primo piano, Avanti, Indietro e Sfondo
