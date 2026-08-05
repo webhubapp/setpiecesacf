@@ -46,8 +46,39 @@ button{cursor:pointer}
 .field-wrap{min-width:0;min-height:0;padding:10px 14px 12px;display:flex;flex-direction:column;gap:8px;background:#25272a}
 .canvas-header{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .current-title{cursor:text;font-size:12px;font-weight:800}.status{font-size:11px;color:var(--muted)}
-.board-shell{position:relative;flex:1;min-height:620px;border-radius:0;overflow:hidden;border:0;background:#fff;width:100%;margin:0 auto;aspect-ratio:1000 / 620;box-shadow:0 0 0 1px #3a3d42}
-#board{position:absolute;inset:0;touch-action:none;user-select:none}
+.board-shell{
+  position:relative;
+  flex:1 1 auto;
+  width:100%;
+  min-width:0;
+  min-height:0;
+  aspect-ratio:1000 / 620;
+  margin:0 auto;
+  overflow:hidden;
+  border:0;
+  border-radius:0;
+  background:#fff;
+  box-shadow:0 0 0 1px #3a3d42;
+  contain:layout paint;
+}
+#board{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:1000px!important;
+  height:620px!important;
+  min-width:1000px!important;
+  min-height:620px!important;
+  max-width:1000px!important;
+  max-height:620px!important;
+  aspect-ratio:auto!important;
+  transform-origin:center center!important;
+  touch-action:none;
+  user-select:none;
+  -webkit-user-select:none;
+  overflow:hidden;
+  will-change:transform;
+}
 .pitch{
   position:absolute;
   inset:0;
@@ -1033,18 +1064,20 @@ body.field-view-mode .board-shell{
   aspect-ratio:auto!important;
 }
 body.field-view-mode #board{
-  position:relative!important;
+  position:absolute!important;
+  left:50%!important;
+  top:50%!important;
   inset:auto!important;
-  width:min(
-    calc(100vw - max(36px,env(safe-area-inset-left)) - max(36px,env(safe-area-inset-right))),
-    calc((100vh - max(36px,env(safe-area-inset-top)) - max(36px,env(safe-area-inset-bottom))) * 1.6129032258)
-  )!important;
-  height:auto!important;
-  aspect-ratio:1000 / 620!important;
-  max-width:none!important;
-  max-height:none!important;
-  flex:0 0 auto!important;
+  width:1000px!important;
+  height:620px!important;
+  min-width:1000px!important;
+  min-height:620px!important;
+  max-width:1000px!important;
+  max-height:620px!important;
+  aspect-ratio:auto!important;
+  flex:none!important;
   overflow:hidden!important;
+  transform-origin:center center!important;
 }
 body.field-view-mode .field-fullscreen-exit{
   display:block;
@@ -1087,8 +1120,7 @@ body.field-locked #board::after{
   aspect-ratio:1000 / 620!important;
 }
 #board{
-  aspect-ratio:1000 / 620;
-  transform:none!important;
+  aspect-ratio:auto!important;
 }
 @media (min-width:761px) and (max-width:1400px){
   .board-shell{
@@ -1107,7 +1139,7 @@ body.field-locked #board::after{
 
 /* v121: nuovo sfondo campo, identico su Mac, iPad, fullscreen ed export */
 #board{
-  background:#ffffff url("./assets/campo.png") center center / 100% 100% no-repeat!important;
+  background:#ffffff url("./assets/campo.png") center center / 1000px 620px no-repeat!important;
 }
 #board > .pitch,
 #board > .half,
@@ -1607,7 +1639,7 @@ body.field-view-mode .field-fullscreen-nav:disabled{opacity:.28}
 <input type="file" id="projectFile" accept=".json" hidden>
 
 <script>
-const STORAGE_KEY="setPieceBoardPro_v127";
+const STORAGE_KEY="setPieceBoardPro_v128";
 
 function safeStorageGet(key){
   try{
@@ -5867,7 +5899,7 @@ function getBackupPayload(){
       "acf-set-pieces-backup"
     ],
     app:"ACF Fiorentina - Set Pieces App",
-    appVersion:"v127",
+    appVersion:"v128",
     createdAt:new Date().toISOString(),
     currentPage:Number(currentPage)||0,
     state:cloneBackupValue(state),
@@ -6456,6 +6488,73 @@ function toggleFieldLock(){
   setStatus(fieldLocked ? "Campo bloccato" : "Campo sbloccato");
 }
 
+
+const BOARD_LOGICAL_WIDTH=1000;
+const BOARD_LOGICAL_HEIGHT=620;
+let boardRenderScale=1;
+let boardRenderFrame=0;
+
+function fitLogicalBoard(){
+  const shell=document.querySelector(".board-shell");
+  const board=document.getElementById("board");
+  if(!shell||!board)return;
+
+  const styles=getComputedStyle(shell);
+  const availableWidth=Math.max(
+    1,
+    shell.clientWidth-
+    (parseFloat(styles.paddingLeft)||0)-
+    (parseFloat(styles.paddingRight)||0)
+  );
+  const availableHeight=Math.max(
+    1,
+    shell.clientHeight-
+    (parseFloat(styles.paddingTop)||0)-
+    (parseFloat(styles.paddingBottom)||0)
+  );
+
+  const scaleX=availableWidth/BOARD_LOGICAL_WIDTH;
+  const scaleY=availableHeight/BOARD_LOGICAL_HEIGHT;
+
+  boardRenderScale=Math.max(.05,Math.min(scaleX,scaleY));
+  board.style.transform=
+    `translate(-50%,-50%) scale(${boardRenderScale})`;
+}
+
+function scheduleLogicalBoardFit(){
+  if(boardRenderFrame)return;
+
+  boardRenderFrame=requestAnimationFrame(()=>{
+    boardRenderFrame=0;
+    fitLogicalBoard();
+  });
+}
+
+function installLogicalBoardRenderer(){
+  const shell=document.querySelector(".board-shell");
+  if(!shell)return;
+
+  if("ResizeObserver" in window){
+    const observer=new ResizeObserver(scheduleLogicalBoardFit);
+    observer.observe(shell);
+  }
+
+  window.addEventListener("resize",scheduleLogicalBoardFit,{passive:true});
+
+  window.addEventListener("orientationchange",()=>{
+    setTimeout(scheduleLogicalBoardFit,80);
+    setTimeout(scheduleLogicalBoardFit,350);
+  },{passive:true});
+
+  document.addEventListener("visibilitychange",()=>{
+    if(document.visibilityState==="visible"){
+      scheduleLogicalBoardFit();
+    }
+  });
+
+  scheduleLogicalBoardFit();
+}
+
 function setFieldViewMode(enabled){
   fieldViewMode=Boolean(enabled);
   document.body.classList.toggle("field-view-mode",fieldViewMode);
@@ -6465,10 +6564,14 @@ function setFieldViewMode(enabled){
     Le coordinate percentuali non vengono ricalcolate né mutate.
   */
   requestAnimationFrame(()=>{
+    scheduleLogicalBoardFit();
     refreshSelectionVisuals();
     refreshObjectSelectionVisuals();
     updateFullscreenNavigation();
   });
+
+  setTimeout(scheduleLogicalBoardFit,80);
+  setTimeout(scheduleLogicalBoardFit,260);
 }
 
 function toggleFieldViewMode(){
@@ -6602,6 +6705,7 @@ document.addEventListener("keydown",event=>{
   }
 });
 
+installLogicalBoardRenderer();
 window.addEventListener("beforeunload",()=>save(false));
 load();renderAll();updateHistoryButtons();syncDrawingControls();updateSelectedNamesButton();syncChestCircleControls();
 </script>

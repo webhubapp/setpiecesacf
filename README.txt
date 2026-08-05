@@ -43,14 +43,14 @@ NOVITÀ v117
 - Allinea V rinominato in Verticale
 
 
-CORREZIONE v127 - POSIZIONI INVARIATE
+CORREZIONE v128 - POSIZIONI INVARIATE
 - Rapporto del campo fissato a 1000 × 620 su Mac, iPad e fullscreen
 - Nessuna deformazione passando tra dispositivi
 - Nessun riallargamento entrando in modalità Campo intero
 - Coordinate di giocatori, frecce, forme, palloni e testi mantenute in percentuale
 
 
-NOVITÀ v127
+NOVITÀ v128
 - Dimensione predefinita delle maglie: 90%
 - Trascinamento più fluido di pallone e testi
 - Stessa anagrafica completa per Fiorentina e avversari
@@ -59,14 +59,14 @@ NOVITÀ v127
 - Controllo completo della sintassi JavaScript
 
 
-NOVITÀ v127
+NOVITÀ v128
 - Nuovo sfondo del campo basato sull'immagine campo.png
 - Vecchie linee CSS del campo disattivate
 - Coordinate e posizioni degli oggetti mantenute invariate
 - Compatibilità Mac, iPad, fullscreen, PNG e PDF
 
 
-NOVITÀ v127
+NOVITÀ v128
 - Movimento pallone più fluido su Mac e iPad
 - Movimento testo più fluido su Mac e iPad
 - Eliminati i rerender durante il trascinamento
@@ -74,7 +74,7 @@ NOVITÀ v127
 - Bloccato lo scorrimento involontario della pagina durante il drag
 
 
-NOVITÀ v127
+NOVITÀ v128
 - Flag Numero nel cerchio per Fiorentina e avversari
 - Opzione Avversari: linea tratteggiata da compilare a penna
 - Navigazione schema precedente/successivo in Campo intero
@@ -83,7 +83,7 @@ NOVITÀ v127
 - Nuove preferenze incluse nel backup
 
 
-NOVITÀ v127
+NOVITÀ v128
 - Linea avversari continua anziché tratteggiata
 - Linea avversari spostata più in basso
 - Flag numero applicato soltanto ai giocatori selezionati
@@ -91,14 +91,14 @@ NOVITÀ v127
 - Stato misto del flag quando la selezione contiene giocatori con impostazioni differenti
 
 
-NOVITÀ v127
+NOVITÀ v128
 - Flag Linea nei selezionati applicato soltanto agli avversari selezionati
 - Possibilità di mostrare o nascondere la linea per singoli avversari o gruppi
 - Stato intermedio del flag per selezioni miste
 - Il flag resta disabilitato se non è selezionato alcun avversario
 
 
-FIX v127 - TRATTEGGIO FRECCE
+FIX v128 - TRATTEGGIO FRECCE
 - Applicato realmente stroke-dasharray al corpo di frecce dritte e curve
 - Punta della freccia sempre piena
 - Quattro livelli: continua, tratto corto, tratto medio, puntinata
@@ -107,7 +107,7 @@ FIX v127 - TRATTEGGIO FRECCE
 - Compatibilità con frecce create nelle versioni precedenti
 
 
-NOVITÀ v127 - AGGIORNAMENTO AUTOMATICO PWA
+NOVITÀ v128 - AGGIORNAMENTO AUTOMATICO PWA
 - Cache service worker versionata per ogni release
 - Eliminazione automatica delle cache precedenti
 - index.html sempre controllato dalla rete prima della cache
@@ -116,3 +116,12 @@ NOVITÀ v127 - AGGIORNAMENTO AUTOMATICO PWA
 - Attivazione automatica della nuova versione
 - Salvataggio dello stato prima del refresh invisibile
 - Nessuna necessità di svuotare manualmente la cache
+
+
+NOVITÀ v128 - RENDERING CAMPO
+- Canvas logico fisso 1000 × 620
+- Il campo viene ridimensionato soltanto tramite transform: scale()
+- Maglie, palloni, testi, frecce e forme crescono insieme al campo
+- Nessun oggetto resta piccolo entrando in Campo intero
+- Coordinate identiche tra Mac, iPad e fullscreen
+- Adattamento automatico a rotazione e ridimensionamento
