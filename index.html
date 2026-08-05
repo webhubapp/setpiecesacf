@@ -1134,6 +1134,79 @@ body.field-locked #board::after{
   cursor:grabbing;
 }
 
+
+.roster-option-toggle{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-height:34px;
+  padding:7px 10px;
+  margin:0 0 8px;
+  border:1px solid #2f4358;
+  border-radius:8px;
+  background:#111b27;
+  color:#c7d2df;
+  font-size:10px;
+  font-weight:800;
+  line-height:1.2;
+  cursor:pointer;
+  user-select:none;
+}
+.roster-option-toggle input{
+  width:16px;
+  height:16px;
+  accent-color:#8bd450;
+}
+.jersey-number{
+  font-family:"DIN","DIN Pro","DIN Alternate",Bahnschrift,Arial,sans-serif;
+  font-size:13px;
+  font-weight:900;
+  fill:#111;
+  text-anchor:middle;
+  dominant-baseline:middle;
+  pointer-events:none;
+}
+.player-tag.blank-opponent-line{
+  top:56px;
+  width:74px;
+  height:14px;
+  color:transparent!important;
+  overflow:visible;
+}
+.player-tag.blank-opponent-line::after{
+  content:"";
+  position:absolute;
+  left:0;
+  right:0;
+  top:7px;
+  border-bottom:1.6px dashed #111;
+}
+.field-fullscreen-nav{
+  display:none;
+  position:fixed;
+  top:50%;
+  transform:translateY(-50%);
+  z-index:10003;
+  width:54px;
+  height:76px;
+  border-radius:14px;
+  border:1px solid #394b60;
+  background:rgba(11,18,27,.88);
+  color:#fff;
+  font-size:48px;
+  line-height:1;
+  cursor:pointer;
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+}
+.field-fullscreen-nav.prev{left:max(12px,env(safe-area-inset-left))}
+.field-fullscreen-nav.next{right:max(12px,env(safe-area-inset-right))}
+body.field-view-mode .field-fullscreen-nav{display:block}
+body.field-view-mode .field-fullscreen-nav:disabled{opacity:.28}
+@media print{
+  .player-tag.blank-opponent-line::after{border-bottom-color:#111!important}
+}
+
 </style>
 
 <script async src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -1268,6 +1341,8 @@ body.field-locked #board::after{
   </div>
   <div class="board-shell">
     <button type="button" class="field-fullscreen-exit" id="fieldFullscreenExitBtn" title="Esci dalla modalità campo intero">×</button>
+    <button type="button" class="field-fullscreen-nav prev" id="fieldPrevSchemeBtn" title="Schema precedente">‹</button>
+    <button type="button" class="field-fullscreen-nav next" id="fieldNextSchemeBtn" title="Schema successivo">›</button>
     <div id="board">
       <div class="pitch"></div><div class="half"></div><div class="center-circle"></div><div class="center-dot"></div>
       <div class="penalty left"></div><div class="penalty right"></div><div class="six left"></div><div class="six right"></div>
@@ -1323,6 +1398,14 @@ body.field-locked #board::after{
         <button type="button" class="btn add-player-action">＋ Giocatore</button>
         <button type="button" class="btn toggle-selected-names-action" title="Mostra o nascondi i cognomi dei giocatori selezionati" aria-label="Mostra o nascondi i cognomi dei giocatori selezionati">👁</button>
       </div>
+      <label class="roster-option-toggle">
+        <input type="checkbox" id="showShirtNumbers">
+        <span>Numero nel cerchio</span>
+      </label>
+      <label class="roster-option-toggle">
+        <input type="checkbox" id="opponentBlankLine">
+        <span>Avversari: linea da compilare</span>
+      </label>
       <div class="roster" id="roster"></div>
     </div>
   <div class="section"><div class="section-title">Note dello schema</div><textarea class="notes" id="notes" placeholder="Trigger, movimenti, blocchi, zona di attacco, alternative..."></textarea></div>
@@ -1518,7 +1601,7 @@ body.field-locked #board::after{
 <input type="file" id="projectFile" accept=".json" hidden>
 
 <script>
-const STORAGE_KEY="setPieceBoardPro_v122";
+const STORAGE_KEY="setPieceBoardPro_v123";
 
 function safeStorageGet(key){
   try{
@@ -1835,6 +1918,8 @@ function load(){
     if(raw)state=JSON.parse(raw);
   }catch(e){}
   if(!state.playerScale)state.playerScale=.90;
+  if(typeof state.showShirtNumbers!=="boolean")state.showShirtNumbers=false;
+  if(typeof state.opponentBlankLine!=="boolean")state.opponentBlankLine=false;
   if(state.homeChestCircle===undefined)state.homeChestCircle=true;
   if(state.awayChestCircle===undefined)state.awayChestCircle=false;
   if(state.homeRosterLoaded===undefined){
@@ -1968,6 +2053,14 @@ function fixLegacyOpponentTenName(){
 
   apply(state.roster);
   apply(state.homeRosterTemplate);
+}
+
+
+function syncRosterDisplayOptions(){
+  const numbers=document.getElementById("showShirtNumbers");
+  const blankLine=document.getElementById("opponentBlankLine");
+  if(numbers)numbers.checked=Boolean(state.showShirtNumbers);
+  if(blankLine)blankLine.checked=Boolean(state.opponentBlankLine);
 }
 
 function setStatus(msg){const el=document.getElementById("status");el.textContent=msg;clearTimeout(setStatus.t);setStatus.t=setTimeout(()=>el.textContent="Pronto",1600)}
@@ -2670,6 +2763,17 @@ function renderPlayers(){
       ?'<circle cx="28" cy="29" r="14.5" fill="#ffffff"/>'
       :"";
 
+    const visibleNumber=(
+      state.showShirtNumbers &&
+      pl.showChestCircle!==false &&
+      pl.number!==0 &&
+      pl.number!==null &&
+      pl.number!==undefined &&
+      pl.number!==""
+    )
+      ? `<text class="jersey-number" x="28" y="29.5">${escapeHtml(String(pl.number))}</text>`
+      : "";
+
     const jerseySvg=`
       <svg class="jersey-svg" viewBox="0 0 56 50" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <defs>
@@ -2689,11 +2793,16 @@ function renderPlayers(){
         <path d="M20 1 C21.5 8 24 11 28 11 C32 11 34.5 8 36 1"
               fill="#f5f5f5" stroke="#282828" stroke-width="2.2" stroke-linecap="round"/>
         ${chestCircle}
+        ${visibleNumber}
       </svg>`;
 
     el.innerHTML=`
       ${jerseySvg}
-      <div class="player-tag">${escapeHtml(pl.showLastName===false?"":String(pl.lastName||pl.name||pl.firstName||"").toUpperCase())}</div>
+      <div class="player-tag${pl.team==="away" && state.opponentBlankLine ? " blank-opponent-line" : ""}">${
+        pl.team==="away" && state.opponentBlankLine
+          ? ""
+          : escapeHtml(pl.showLastName===false?"":String(pl.lastName||pl.name||pl.firstName||"").toUpperCase())
+      }</div>
     `;
     el.title="Trascina per spostare · doppio clic per aprire l’anagrafica";
 
@@ -3652,6 +3761,8 @@ function renderDrawings(){
       `${headData.right.x},${headData.right.y}`
     );
     arrowHead.setAttribute("fill",d.color);
+    arrowHead.removeAttribute("stroke-dasharray");
+    arrowHead.style.strokeDasharray="";
     arrowHead.setAttribute("stroke","none");
     arrowHead.setAttribute("shape-rendering","geometricPrecision");
     arrowHead.setAttribute("filter","url(#arrowShadow)");
@@ -3828,6 +3939,8 @@ function renderAll(){
   syncChestCircleControls();
 
   updateSubstitutionButton();
+
+  syncRosterDisplayOptions();
 }
 
 
@@ -3987,6 +4100,7 @@ document.getElementById("board").addEventListener("pointerup",e=>{
       curveOffset:drawingDefaults.curveOffset,
       opacity:drawingDefaults.opacity,
       shapeMode:drawingDefaults.shapeMode,
+      dashStyle:Number(drawingDefaults.dashStyle)||0,
       dashStyle:drawingDefaults.dashStyle
     };
     if(tool==="curve"){
@@ -4088,6 +4202,7 @@ document.getElementById("drawingHead").addEventListener("input",e=>applyDrawingS
 document.getElementById("drawingCurve").addEventListener("input",e=>applyDrawingStyleChange("curveOffset",Number(e.target.value)));
 document.getElementById("drawingOpacity").addEventListener("input",e=>applyDrawingStyleChange("opacity",Number(e.target.value)));
 document.getElementById("drawingDash").addEventListener("input",e=>applyDrawingStyleChange("dashStyle",Number(e.target.value)));
+document.getElementById("drawingDash").addEventListener("change",e=>applyDrawingStyleChange("dashStyle",Number(e.target.value)));
 document.getElementById("shapeMode").addEventListener("change",e=>applyDrawingStyleChange("shapeMode",e.target.value));
 
 document.querySelectorAll(".drawing-preset").forEach(btn=>{
@@ -5628,7 +5743,7 @@ function getBackupPayload(){
       "acf-set-pieces-backup"
     ],
     app:"ACF Fiorentina - Set Pieces App",
-    appVersion:"v122",
+    appVersion:"v123",
     createdAt:new Date().toISOString(),
     currentPage:Number(currentPage)||0,
     state:cloneBackupValue(state),
@@ -6228,6 +6343,7 @@ function setFieldViewMode(enabled){
   requestAnimationFrame(()=>{
     refreshSelectionVisuals();
     refreshObjectSelectionVisuals();
+    updateFullscreenNavigation();
   });
 }
 
@@ -6247,6 +6363,17 @@ document.getElementById("board").addEventListener("dblclick",event=>{
   event.stopImmediatePropagation();
 },true);
 
+
+document.getElementById("showShirtNumbers").addEventListener("change",event=>{
+  state.showShirtNumbers=event.target.checked;
+  renderPlayers();
+  save(false);
+});
+document.getElementById("opponentBlankLine").addEventListener("change",event=>{
+  state.opponentBlankLine=event.target.checked;
+  renderPlayers();
+  save(false);
+});
 
 document.getElementById("touchUndoBtn").addEventListener("click",undo);
 document.getElementById("touchCopyBtn").addEventListener("click",copyCurrentSelection);
@@ -6271,6 +6398,28 @@ document.getElementById("touchFullscreenBtn").addEventListener(
   "click",
   toggleFieldViewMode
 );
+
+function updateFullscreenNavigation(){
+  const prev=document.getElementById("fieldPrevSchemeBtn");
+  const next=document.getElementById("fieldNextSchemeBtn");
+  if(prev)prev.disabled=currentPage<=0;
+  if(next)next.disabled=currentPage>=state.pages.length-1;
+}
+
+function goToFullscreenScheme(direction){
+  const target=currentPage+direction;
+  if(target<0 || target>=state.pages.length)return;
+
+  currentPage=target;
+  clearAllSelections();
+  renderAll();
+  save(false);
+  updateFullscreenNavigation();
+}
+
+document.getElementById("fieldPrevSchemeBtn").addEventListener("click",()=>goToFullscreenScheme(-1));
+document.getElementById("fieldNextSchemeBtn").addEventListener("click",()=>goToFullscreenScheme(1));
+
 document.getElementById("fieldFullscreenExitBtn").addEventListener(
   "click",
   ()=>setFieldViewMode(false)
