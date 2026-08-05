@@ -1332,6 +1332,12 @@ body.field-view-mode #board{
   }
 }
 
+
+/* v134: stato tecnico nascosto per non sporcare l'header */
+.canvas-header .status{
+  display:none!important;
+}
+
 </style>
 
 <script async src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -1461,7 +1467,7 @@ body.field-view-mode #board{
       <button type="button" class="btn substitution-launch-btn" id="openSubstitutionBtn">Sostituzione</button>
       <button type="button" class="btn presentation-mode-btn dressing-room" id="dressingRoomModeBtn">SPOGLIATOIO</button>
     </div>
-    <div class="status" id="status">Pronto</div>
+    <div class="status" id="status" aria-live="polite"></div>
     <div class="lineup-counters" aria-label="Giocatori in campo">
       <div class="lineup-counter home" id="homeLineupCount">0/11</div>
       <div class="lineup-counter-separator">–</div>
@@ -1730,7 +1736,7 @@ body.field-view-mode #board{
 <input type="file" id="projectFile" accept=".json" hidden>
 
 <script>
-const STORAGE_KEY="setPieceBoardPro_v133";
+const STORAGE_KEY="setPieceBoardPro_v134";
 
 function safeStorageGet(key){
   try{
@@ -2047,6 +2053,9 @@ function load(){
     if(raw)state=JSON.parse(raw);
   }catch(e){}
   if(!state.playerScale)state.playerScale=.90;
+  if(!["normal","bench","locker"].includes(state.presentationMode)){
+    state.presentationMode="normal";
+  }
   if(state.homeChestCircle===undefined)state.homeChestCircle=true;
   if(state.awayChestCircle===undefined)state.awayChestCircle=false;
   if(state.homeRosterLoaded===undefined){
@@ -2953,13 +2962,26 @@ function renderPlayers(){
         <path d="${jerseyPath}" fill="url(#${gradientId})"/>`;
     }
 
-    const chestCircle=pl.showChestCircle!==false
+    const effectiveShowCircle=
+      state.presentationMode==="bench" ||
+      state.presentationMode==="locker"
+        ? true
+        : pl.showChestCircle!==false;
+
+    const chestCircle=effectiveShowCircle
       ?'<circle cx="28" cy="29" r="14.5" fill="#ffffff"/>'
       :"";
 
+    const effectiveShowNumber=
+      state.presentationMode==="bench"
+        ? true
+        : state.presentationMode==="locker"
+          ? false
+          : pl.showShirtNumber===true;
+
     const visibleNumber=(
-      pl.showShirtNumber===true &&
-      pl.showChestCircle!==false &&
+      effectiveShowNumber &&
+      effectiveShowCircle &&
       pl.number!==0 &&
       pl.number!==null &&
       pl.number!==undefined &&
@@ -2992,10 +3014,22 @@ function renderPlayers(){
 
     el.innerHTML=`
       ${jerseySvg}
-      <div class="player-tag${pl.team==="away" && pl.showOpponentBlankLine===true ? " blank-opponent-line" : ""}">${
-        pl.team==="away" && pl.showOpponentBlankLine===true
+      <div class="player-tag${
+        state.presentationMode==="normal" &&
+        pl.team==="away" &&
+        pl.showOpponentBlankLine===true
+          ? " blank-opponent-line"
+          : ""
+      }">${
+        state.presentationMode==="locker"
           ? ""
-          : escapeHtml(pl.showLastName===false?"":String(pl.lastName||pl.name||pl.firstName||"").toUpperCase())
+          : state.presentationMode==="bench"
+            ? escapeHtml(String(pl.lastName||pl.name||pl.firstName||"").toUpperCase())
+            : (
+                pl.team==="away" && pl.showOpponentBlankLine===true
+                  ? ""
+                  : escapeHtml(pl.showLastName===false?"":String(pl.lastName||pl.name||pl.firstName||"").toUpperCase())
+              )
       }</div>
     `;
     el.title="Trascina per spostare · doppio clic per aprire l’anagrafica";
@@ -3080,57 +3114,21 @@ function updatePresentationModeButtons(){
   const bench=document.getElementById("benchModeBtn");
   const dressing=document.getElementById("dressingRoomModeBtn");
 
-  const players=state.roster||[];
-
-  const isBench=
-    players.length>0 &&
-    players.every(player=>
-      player.showLastName!==false &&
-      player.showChestCircle!==false &&
-      player.showShirtNumber===true &&
-      player.showOpponentBlankLine!==true
-    );
-
-  const isDressingRoom=
-    players.length>0 &&
-    players.every(player=>
-      player.showLastName===false &&
-      player.showChestCircle!==false &&
-      player.showShirtNumber!==true &&
-      player.showOpponentBlankLine!==true
-    );
-
-  bench?.classList.toggle("active",isBench);
-  dressing?.classList.toggle("active",isDressingRoom);
+  bench?.classList.toggle("active",state.presentationMode==="bench");
+  dressing?.classList.toggle("active",state.presentationMode==="locker");
 }
 
 function applyGlobalPlayerDisplayMode(mode){
-  if(!Array.isArray(state.roster)||!state.roster.length){
-    setStatus("La rosa è vuota");
-    return;
-  }
+  const normalizedMode=mode==="bench" ? "bench" : "locker";
 
   pushHistory();
+  state.presentationMode=normalizedMode;
 
-  state.roster.forEach(player=>{
-    /*
-      Entrambe le modalità mantengono sempre il cerchio bianco.
-      Le linee degli avversari vengono disattivate perché PANCHINA
-      deve mostrare il cognome e SPOGLIATOIO deve lasciare solo il cerchio.
-    */
-    player.showChestCircle=true;
-    player.showOpponentBlankLine=false;
-
-    if(mode==="bench"){
-      player.showLastName=true;
-      player.showShirtNumber=true;
-    }else{
-      player.showLastName=false;
-      player.showShirtNumber=false;
-    }
-  });
-
-  updateHomeRosterTemplate();
+  /*
+    È una modalità globale del progetto:
+    vale automaticamente per tutti gli schemi esistenti,
+    per quelli duplicati e per quelli creati successivamente.
+  */
   renderPlayers();
   renderRoster();
   syncRosterDisplayOptions();
@@ -3138,9 +3136,9 @@ function applyGlobalPlayerDisplayMode(mode){
   save(false);
 
   setStatus(
-    mode==="bench"
-      ? "Modalità PANCHINA: nome, cerchio e numero visibili"
-      : "Modalità SPOGLIATOIO: visibile soltanto il cerchio bianco"
+    normalizedMode==="bench"
+      ? "Modalità PANCHINA attiva su tutti gli schemi"
+      : "Modalità SPOGLIATOIO attiva su tutti gli schemi"
   );
 }
 
@@ -6063,7 +6061,7 @@ function getBackupPayload(){
       "acf-set-pieces-backup"
     ],
     app:"ACF Fiorentina - Set Pieces App",
-    appVersion:"v133",
+    appVersion:"v134",
     createdAt:new Date().toISOString(),
     currentPage:Number(currentPage)||0,
     state:cloneBackupValue(state),
@@ -6928,7 +6926,7 @@ document.getElementById("benchModeBtn").addEventListener(
 
 document.getElementById("dressingRoomModeBtn").addEventListener(
   "click",
-  ()=>applyGlobalPlayerDisplayMode("dressingRoom")
+  ()=>applyGlobalPlayerDisplayMode("locker")
 );
 
 document.getElementById("touchUndoBtn").addEventListener("click",undo);
