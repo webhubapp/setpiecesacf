@@ -43,8 +43,17 @@ NOVITÀ v117
 - Allinea V rinominato in Verticale
 
 
-CORREZIONE v119 - POSIZIONI INVARIATE
+CORREZIONE v120 - POSIZIONI INVARIATE
 - Rapporto del campo fissato a 1000 × 620 su Mac, iPad e fullscreen
 - Nessuna deformazione passando tra dispositivi
 - Nessun riallargamento entrando in modalità Campo intero
 - Coordinate di giocatori, frecce, forme, palloni e testi mantenute in percentuale
+
+
+NOVITÀ v120
+- Dimensione predefinita delle maglie: 90%
+- Trascinamento più fluido di pallone e testi
+- Stessa anagrafica completa per Fiorentina e avversari
+- Cursore Tratteggio per frecce dritte e curve
+- Punta delle frecce sempre piena
+- Controllo completo della sintassi JavaScript

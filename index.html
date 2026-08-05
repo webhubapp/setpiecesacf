@@ -1096,6 +1096,14 @@ body.field-locked #board::after{
   }
 }
 
+
+.ball,
+.tactical-text{
+  touch-action:none;
+  -webkit-tap-highlight-color:transparent;
+  will-change:left,top,transform;
+}
+
 </style>
 
 <script async src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -1179,6 +1187,7 @@ body.field-locked #board::after{
     <label class="style-control"><span>Punta</span><input id="drawingHead" type="range" min="8" max="22" step="1" value="13"></label>
     <label class="style-control"><span>Curvatura</span><input id="drawingCurve" type="range" min="-220" max="220" step="10" value="-90"></label>
     <label class="style-control"><span>Opacità</span><input id="drawingOpacity" type="range" min="0.10" max="1" step="0.05" value="1"></label>
+    <label class="style-control"><span>Tratteggio</span><input id="drawingDash" type="range" min="0" max="3" step="1" value="0"></label>
     <label class="style-control"><span>Forma</span>
       <select id="shapeMode" class="select" style="padding:5px;font-size:10px">
         <option value="both">Bordo + riempimento</option>
@@ -1191,8 +1200,8 @@ body.field-locked #board::after{
 
   <div class="library-panel">
     <div class="library-title">Player size</div>
-    <input id="playerScale" type="range" min="0.65" max="1.65" step="0.05" value="0.85" style="width:100%">
-    <div id="playerScaleValue" class="library-help" style="text-align:right">85%</div>
+    <input id="playerScale" type="range" min="0.65" max="1.65" step="0.05" value="0.90" style="width:100%">
+    <div id="playerScaleValue" class="library-help" style="text-align:right">90%</div>
 <div id="playerScaleMode" class="player-size-mode"><strong>Dimensione globale</strong><br>Seleziona una sola maglietta per modificarne soltanto la dimensione.</div>
   </div>
 
@@ -1479,7 +1488,7 @@ body.field-locked #board::after{
 <input type="file" id="projectFile" accept=".json" hidden>
 
 <script>
-const STORAGE_KEY="setPieceBoardPro_v119";
+const STORAGE_KEY="setPieceBoardPro_v120";
 
 function safeStorageGet(key){
   try{
@@ -1523,7 +1532,8 @@ let drawingDefaults={
   headSize:13,
   curveOffset:-90,
   opacity:1,
-  shapeMode:"both"
+  shapeMode:"both",
+  dashStyle:0
 };
 let marqueeStart=null;
 let marqueeMoved=false;
@@ -1673,7 +1683,7 @@ function defaultPositions(count=state?.roster?.length || defaultRoster.length){
   return Array.from({length:count},()=>null);
 }
 const emptyPage=i=>({title:i===0?"ACF Fiorentina · Schema 1":`Schema ${i+1}`,notes:"",positions:defaultPositions(defaultRoster.length),drawings:[],balls:[],texts:[]});
-let state={roster:defaultRoster,pages:Array.from({length:10},(_,i)=>emptyPage(i)),playerScale:.85,homeChestCircle:true,awayChestCircle:false,homeRosterLoaded:false,awayRosterLoaded:false,homeRosterTemplate:null};
+let state={roster:defaultRoster,pages:Array.from({length:10},(_,i)=>emptyPage(i)),playerScale:.90,homeChestCircle:true,awayChestCircle:false,homeRosterLoaded:false,awayRosterLoaded:false,homeRosterTemplate:null};
 
 const FIORENTINA_PRESET=[
   {number:43,firstName:"David",lastName:"De Gea",name:"David De Gea",team:"gk",color:"#e3b52d"},
@@ -1794,7 +1804,7 @@ function load(){
     const raw=safeStorageGet(STORAGE_KEY);
     if(raw)state=JSON.parse(raw);
   }catch(e){}
-  if(!state.playerScale)state.playerScale=.85;
+  if(!state.playerScale)state.playerScale=.90;
   if(state.homeChestCircle===undefined)state.homeChestCircle=true;
   if(state.awayChestCircle===undefined)state.awayChestCircle=false;
   if(state.homeRosterLoaded===undefined){
@@ -2572,32 +2582,6 @@ card.addEventListener("dblclick",e=>{
   }
 }
 
-function editAwaySurnameFromField(idx){
-  const p=state.roster[idx];
-  if(!p || p.team!=="away")return;
-
-  const current=(p.lastName||p.name||"").trim();
-  const value=prompt("Cognome avversario:",current);
-  if(value===null)return;
-
-  const surname=value.trim();
-  pushHistory();
-
-  p.firstName="";
-  p.lastName=surname;
-  p.name=surname;
-  p.showLastName=surname.length>0;
-
-  renderRoster();
-  renderPlayers();
-  refreshSelectionVisuals();
-  save(false);
-
-  setStatus(surname
-    ? "Cognome avversario aggiornato"
-    : "Cognome avversario rimosso");
-}
-
 const fieldPlayerTapTimes=new Map();
 
 function renderPlayers(){
@@ -2623,7 +2607,7 @@ function renderPlayers(){
     el.className="player"+(selectedPlayers.has(i)?" selected":"")+(pl.team==="away"?" opponent":"");
     el.style.left=pos.x+"%";
     el.style.top=pos.y+"%";
-    const appliedScale=pl.individualScale ?? state.playerScale ?? .85;
+    const appliedScale=pl.individualScale ?? state.playerScale ?? .90;
     el.style.transform=`translate(-50%,-50%) scale(${appliedScale})`;
     el.dataset.index=i;
 
@@ -2925,7 +2909,7 @@ function startGroupDrag(e){
 
       el.style.left=page().positions[i].x+"%";
       el.style.top=page().positions[i].y+"%";
-      el.style.transform=`translate(-50%,-50%) scale(${state.roster[i].individualScale ?? state.playerScale ?? .85})`;
+      el.style.transform=`translate(-50%,-50%) scale(${state.roster[i].individualScale ?? state.playerScale ?? .90})`;
     });
   };
 
@@ -3007,9 +2991,11 @@ function renderBalls(){
       beginDragVisual(el,pointerId);
 
       const updater=makeSmoothDragFrame(ev=>{
-        const dx=ev.clientX-start.x;
-        const dy=ev.clientY-start.y;
-        el.style.transform=`translate(-50%,-50%) translate3d(${dx}px,${dy}px,0)`;
+        ball.x=Math.max(1.5,Math.min(98.5,initial.x+(ev.clientX-start.x)/rect.width*100));
+        ball.y=Math.max(2,Math.min(98,initial.y+(ev.clientY-start.y)/rect.height*100));
+        el.style.left=ball.x+"%";
+        el.style.top=ball.y+"%";
+        el.style.transform="translate(-50%,-50%)";
       });
 
       const move=ev=>updater.move(ev);
@@ -3101,9 +3087,11 @@ el.addEventListener("pointerdown",e=>{
       beginDragVisual(el,pointerId);
 
       const updater=makeSmoothDragFrame(ev=>{
-        const dx=ev.clientX-start.x;
-        const dy=ev.clientY-start.y;
-        el.style.transform=`translate(-50%,-50%) translate3d(${dx}px,${dy}px,0)`;
+        item.x=Math.max(1,Math.min(99,initial.x+(ev.clientX-start.x)/rect.width*100));
+        item.y=Math.max(2,Math.min(98,initial.y+(ev.clientY-start.y)/rect.height*100));
+        el.style.left=item.x+"%";
+        el.style.top=item.y+"%";
+        el.style.transform="translate(-50%,-50%)";
       });
 
       const move=ev=>updater.move(ev);
@@ -3446,6 +3434,7 @@ function renderDrawings(){
     d.headSize=Number(d.headSize)||drawingDefaults.headSize;
     d.opacity=Number.isFinite(Number(d.opacity))?Number(d.opacity):1;
     d.shapeMode=d.shapeMode||"both";
+    d.dashStyle=Number.isFinite(Number(d.dashStyle))?Number(d.dashStyle):0;
     ensureCurveControls(d);
     clampDrawing(d);
 
@@ -3732,6 +3721,7 @@ function syncDrawingControls(){
   const head=document.getElementById("drawingHead");
   const curve=document.getElementById("drawingCurve");
   const opacity=document.getElementById("drawingOpacity");
+  const dash=document.getElementById("drawingDash");
   const shapeMode=document.getElementById("shapeMode");
 
   if(color)color.value=src.color||drawingDefaults.color;
@@ -3739,6 +3729,7 @@ function syncDrawingControls(){
   if(head)head.value=src.headSize||drawingDefaults.headSize;
   if(curve)curve.value=src.curveOffset??drawingDefaults.curveOffset;
   if(opacity)opacity.value=src.opacity??drawingDefaults.opacity;
+  if(dash)dash.value=src.dashStyle??drawingDefaults.dashStyle;
   if(shapeMode)shapeMode.value=src.shapeMode||drawingDefaults.shapeMode;
 
   document.querySelectorAll(".drawing-preset").forEach(b=>{
@@ -3785,7 +3776,7 @@ function renderAll(){
 
   if(singleSelected!==null && state.roster[singleSelected]){
     const player=state.roster[singleSelected];
-    const value=player.individualScale ?? state.playerScale ?? .85;
+    const value=player.individualScale ?? state.playerScale ?? .90;
     if(scaleInput)scaleInput.value=value;
     if(scaleValue)scaleValue.textContent=Math.round(value*100)+"%";
     if(scaleMode)scaleMode.innerHTML=`<strong>Dimensione singola</strong><br>${escapeHtml(player.lastName||player.name||"Giocatore")}`;
@@ -3956,7 +3947,8 @@ document.getElementById("board").addEventListener("pointerup",e=>{
       headSize:drawingDefaults.headSize,
       curveOffset:drawingDefaults.curveOffset,
       opacity:drawingDefaults.opacity,
-      shapeMode:drawingDefaults.shapeMode
+      shapeMode:drawingDefaults.shapeMode,
+      dashStyle:drawingDefaults.dashStyle
     };
     if(tool==="curve"){
       const dx=end.x-drawingStart.x,dy=end.y-drawingStart.y;
@@ -4056,6 +4048,7 @@ document.getElementById("drawingWidth").addEventListener("input",e=>applyDrawing
 document.getElementById("drawingHead").addEventListener("input",e=>applyDrawingStyleChange("headSize",Number(e.target.value)));
 document.getElementById("drawingCurve").addEventListener("input",e=>applyDrawingStyleChange("curveOffset",Number(e.target.value)));
 document.getElementById("drawingOpacity").addEventListener("input",e=>applyDrawingStyleChange("opacity",Number(e.target.value)));
+document.getElementById("drawingDash").addEventListener("input",e=>applyDrawingStyleChange("dashStyle",Number(e.target.value)));
 document.getElementById("shapeMode").addEventListener("change",e=>applyDrawingStyleChange("shapeMode",e.target.value));
 
 document.querySelectorAll(".drawing-preset").forEach(btn=>{
@@ -5596,7 +5589,7 @@ function getBackupPayload(){
       "acf-set-pieces-backup"
     ],
     app:"ACF Fiorentina - Set Pieces App",
-    appVersion:"v119",
+    appVersion:"v120",
     createdAt:new Date().toISOString(),
     currentPage:Number(currentPage)||0,
     state:cloneBackupValue(state),
