@@ -1,10 +1,11 @@
-const CACHE_NAME = "acf-set-pieces-v120";
+const CACHE_NAME = "acf-set-pieces-v121";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
   "./icons/icon-192.png",
-  "./icons/icon-512.png"
+  "./icons/icon-512.png",
+  "./assets/campo.png"
 ];
 
 self.addEventListener("install", event => {

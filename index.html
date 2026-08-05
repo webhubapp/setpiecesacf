@@ -1104,6 +1104,21 @@ body.field-locked #board::after{
   will-change:left,top,transform;
 }
 
+
+/* v121: nuovo sfondo campo, identico su Mac, iPad, fullscreen ed export */
+#board{
+  background:#ffffff url("./assets/campo.png") center center / 100% 100% no-repeat!important;
+}
+#board > .pitch,
+#board > .half,
+#board > .center-circle,
+#board > .center-dot,
+#board > .penalty,
+#board > .six,
+#board > .goal{
+  display:none!important;
+}
+
 </style>
 
 <script async src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -1488,7 +1503,7 @@ body.field-locked #board::after{
 <input type="file" id="projectFile" accept=".json" hidden>
 
 <script>
-const STORAGE_KEY="setPieceBoardPro_v120";
+const STORAGE_KEY="setPieceBoardPro_v121";
 
 function safeStorageGet(key){
   try{
@@ -5589,7 +5604,7 @@ function getBackupPayload(){
       "acf-set-pieces-backup"
     ],
     app:"ACF Fiorentina - Set Pieces App",
-    appVersion:"v120",
+    appVersion:"v121",
     createdAt:new Date().toISOString(),
     currentPage:Number(currentPage)||0,
     state:cloneBackupValue(state),
