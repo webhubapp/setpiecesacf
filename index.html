@@ -1064,8 +1064,8 @@ body.field-view-mode .board-shell{
 }
 body.field-view-mode #board{
   position:absolute!important;
-  left:0!important;
-  top:0!important;
+  left:0;
+  top:0;
   right:auto!important;
   bottom:auto!important;
   inset:auto!important;
@@ -1276,6 +1276,16 @@ body.field-view-mode{
 }
 body.field-view-mode #board{
   box-shadow:0 0 0 1px rgba(0,0,0,.08);
+}
+
+
+body.field-view-mode .board-shell{
+  display:block!important;
+  padding:0!important;
+}
+body.field-view-mode #board{
+  margin:0!important;
+  transform-origin:top left!important;
 }
 
 </style>
@@ -1672,7 +1682,7 @@ body.field-view-mode #board{
 <input type="file" id="projectFile" accept=".json" hidden>
 
 <script>
-const STORAGE_KEY="setPieceBoardPro_v131";
+const STORAGE_KEY="setPieceBoardPro_v132";
 
 function safeStorageGet(key){
   try{
@@ -5932,7 +5942,7 @@ function getBackupPayload(){
       "acf-set-pieces-backup"
     ],
     app:"ACF Fiorentina - Set Pieces App",
-    appVersion:"v131",
+    appVersion:"v132",
     createdAt:new Date().toISOString(),
     currentPage:Number(currentPage)||0,
     state:cloneBackupValue(state),
@@ -6524,8 +6534,8 @@ function toggleFieldLock(){
 
 const BOARD_LOGICAL_WIDTH=1000;
 const BOARD_LOGICAL_HEIGHT=620;
-const FULLSCREEN_SIDE_SAFE=96;
-const FULLSCREEN_VERTICAL_SAFE=58;
+const FULLSCREEN_SIDE_SAFE=34;
+const FULLSCREEN_VERTICAL_SAFE=22;
 
 let boardRenderScale=1;
 let boardRenderFrame=0;
@@ -6583,7 +6593,7 @@ function fitLogicalBoard(){
       Piccolo margine aggiuntivo per evitare qualsiasi taglio dovuto
       all'arrotondamento dei pixel o alle barre dinamiche del browser.
     */
-    boardRenderScale*=0.965;
+    boardRenderScale*=0.995;
 
     const renderedWidth=BOARD_LOGICAL_WIDTH*boardRenderScale;
     const renderedHeight=BOARD_LOGICAL_HEIGHT*boardRenderScale;
@@ -6625,9 +6635,21 @@ function fitLogicalBoard(){
     );
   }
 
-  board.style.left=`${Math.max(0,offsetLeft)}px`;
-  board.style.top=`${Math.max(0,offsetTop)}px`;
-  board.style.transform=`scale(${boardRenderScale})`;
+  board.style.setProperty(
+    "left",
+    `${Math.max(0,offsetLeft)}px`,
+    "important"
+  );
+  board.style.setProperty(
+    "top",
+    `${Math.max(0,offsetTop)}px`,
+    "important"
+  );
+  board.style.setProperty(
+    "transform",
+    `scale(${boardRenderScale})`,
+    "important"
+  );
 }
 
 function scheduleLogicalBoardFit(){
@@ -6697,9 +6719,10 @@ function setFieldViewMode(enabled){
     updateFullscreenNavigation();
   });
 
-  setTimeout(scheduleLogicalBoardFit,30);
-  setTimeout(scheduleLogicalBoardFit,120);
-  setTimeout(scheduleLogicalBoardFit,320);
+  setTimeout(scheduleLogicalBoardFit,20);
+  setTimeout(scheduleLogicalBoardFit,100);
+  setTimeout(scheduleLogicalBoardFit,260);
+  setTimeout(scheduleLogicalBoardFit,520);
 }
 
 function toggleFieldViewMode(){
