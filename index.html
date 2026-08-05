@@ -1350,6 +1350,58 @@ body.field-view-mode #board{
   display:none!important;
 }
 
+
+/* v138: header stabile, nessuna sovrapposizione tra i pulsanti */
+.canvas-header{
+  display:grid!important;
+  grid-template-columns:minmax(150px,1fr) auto minmax(150px,1fr)!important;
+  align-items:center!important;
+  column-gap:18px!important;
+}
+.presentation-mode-actions{
+  grid-column:2!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:8px!important;
+  min-width:0!important;
+  flex-wrap:nowrap!important;
+}
+.substitution-launch-btn.shifted{
+  margin-left:30px!important;
+  min-width:150px!important;
+  flex:0 0 auto!important;
+}
+.canvas-header .current-title{
+  grid-column:1!important;
+  min-width:0!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+.canvas-header .lineup-counters{
+  grid-column:3!important;
+  justify-self:end!important;
+}
+@media(max-width:1200px){
+  .canvas-header{
+    grid-template-columns:minmax(120px,1fr) auto minmax(120px,1fr)!important;
+    column-gap:10px!important;
+  }
+  .presentation-mode-actions{
+    gap:5px!important;
+  }
+  .presentation-mode-btn{
+    min-width:84px!important;
+    padding-inline:7px!important;
+    font-size:9px!important;
+  }
+  .substitution-launch-btn.shifted{
+    margin-left:14px!important;
+    min-width:124px!important;
+  }
+}
+
 </style>
 
 <script async src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -1749,7 +1801,7 @@ body.field-view-mode #board{
 <input type="file" id="projectFile" accept=".json" hidden>
 
 <script>
-const STORAGE_KEY="setPieceBoardPro_v137";
+const STORAGE_KEY="setPieceBoardPro_v138";
 
 function safeStorageGet(key){
   try{
@@ -2279,8 +2331,7 @@ function syncRosterDisplayOptions(){
 
   if(numbers){
     const indexes=getSelectedPlayerIndexesForNumberToggle();
-    const freeMode=state.presentationMode==="normal";
-    numbers.disabled=!freeMode || indexes.length===0;
+    numbers.disabled=indexes.length===0;
     const numberValues=indexes.map(index=>
       getEffectivePlayerDisplayValue(
         index,
@@ -2305,11 +2356,7 @@ function syncRosterDisplayOptions(){
 
   if(blankLine){
     const opponentIndexes=getSelectedOpponentIndexesForBlankLine();
-    const freeMode=
-      state.presentationMode==="normal" ||
-      state.presentationMode==="locker";
-
-    blankLine.disabled=!freeMode || opponentIndexes.length===0;
+    blankLine.disabled=opponentIndexes.length===0;
     const lineValues=opponentIndexes.map(index=>
       getEffectivePlayerDisplayValue(
         index,
@@ -3029,11 +3076,7 @@ function renderPlayers(){
         <path d="${jerseyPath}" fill="url(#${gradientId})"/>`;
     }
 
-    const effectiveShowCircle=
-      state.presentationMode==="bench" ||
-      state.presentationMode==="locker"
-        ? true
-        : pl.showChestCircle!==false;
+    const effectiveShowCircle=true;
 
     const chestCircle=effectiveShowCircle
       ?'<circle cx="28" cy="29" r="14.5" fill="#ffffff"/>'
@@ -3045,12 +3088,7 @@ function renderPlayers(){
       pl.showShirtNumber===true
     );
 
-    const effectiveShowNumber=
-      state.presentationMode==="bench"
-        ? true
-        : state.presentationMode==="locker"
-          ? false
-          : schemaShowNumber;
+    const effectiveShowNumber=schemaShowNumber;
 
     const visibleNumber=(
       effectiveShowNumber &&
@@ -3070,7 +3108,6 @@ function renderPlayers(){
     );
 
     const effectiveShowOpponentLine=
-      (state.presentationMode==="normal" || state.presentationMode==="locker") &&
       pl.team==="away" &&
       schemaShowOpponentLine;
 
@@ -3099,10 +3136,10 @@ function renderPlayers(){
     el.innerHTML=`
       ${jerseySvg}
       <div class="player-tag${effectiveShowOpponentLine ? " blank-opponent-line" : ""}">${
-        state.presentationMode==="bench"
-          ? escapeHtml(String(pl.lastName||pl.name||pl.firstName||"").toUpperCase())
-          : effectiveShowOpponentLine
-            ? ""
+        effectiveShowOpponentLine
+          ? ""
+          : state.presentationMode==="bench"
+            ? escapeHtml(String(pl.lastName||pl.name||pl.firstName||"").toUpperCase())
             : state.presentationMode==="locker"
               ? ""
               : escapeHtml(pl.showLastName===false?"":String(pl.lastName||pl.name||pl.firstName||"").toUpperCase())
@@ -3207,11 +3244,22 @@ function applyGlobalPlayerDisplayMode(mode){
   pushHistory();
   state.presentationMode=normalizedMode;
 
-  /*
-    PANCHINA e SPOGLIATOIO sono modalità globali.
-    PREPARAZIONE riattiva la gestione libera schema per schema:
-    numero, cognome, linea e cerchio tornano modificabili manualmente.
-  */
+  if(normalizedMode==="bench" || normalizedMode==="locker"){
+    state.pages.forEach(projectPage=>{
+      if(!projectPage.playerDisplayOverrides || typeof projectPage.playerDisplayOverrides!=="object"){
+        projectPage.playerDisplayOverrides={};
+      }
+
+      state.roster.forEach((player,index)=>{
+        const key=player?.id ? String(player.id) : String(index);
+        const override=projectPage.playerDisplayOverrides[key]||{};
+
+        override.showShirtNumber=normalizedMode==="bench";
+        projectPage.playerDisplayOverrides[key]=override;
+      });
+    });
+  }
+
   renderPlayers();
   renderRoster();
   syncRosterDisplayOptions();
@@ -3222,7 +3270,7 @@ function applyGlobalPlayerDisplayMode(mode){
     normalizedMode==="bench"
       ? "Modalità PANCHINA attiva su tutti gli schemi"
       : normalizedMode==="locker"
-        ? "Modalità SPOGLIATOIO: nomi e numeri nascosti, linee selettive disponibili"
+        ? "Modalità SPOGLIATOIO attiva su tutti gli schemi"
         : "Modalità PREPARAZIONE: modifiche libere riattivate"
   );
 }
@@ -6146,7 +6194,7 @@ function getBackupPayload(){
       "acf-set-pieces-backup"
     ],
     app:"ACF Fiorentina - Set Pieces App",
-    appVersion:"v137",
+    appVersion:"v138",
     createdAt:new Date().toISOString(),
     currentPage:Number(currentPage)||0,
     state:cloneBackupValue(state),
@@ -6947,14 +6995,6 @@ document.getElementById("board").addEventListener("dblclick",event=>{
 
 
 document.getElementById("showShirtNumbers").addEventListener("change",event=>{
-  if(state.presentationMode!=="normal"){
-    event.target.checked=false;
-    event.target.indeterminate=false;
-    setStatus("Attiva PREPARAZIONE per modificare liberamente i numeri");
-    syncRosterDisplayOptions();
-    return;
-  }
-
   const indexes=getSelectedPlayerIndexesForNumberToggle();
 
   if(!indexes.length){
@@ -6983,17 +7023,6 @@ document.getElementById("showShirtNumbers").addEventListener("change",event=>{
   );
 });
 document.getElementById("opponentBlankLine").addEventListener("change",event=>{
-  if(
-    state.presentationMode!=="normal" &&
-    state.presentationMode!=="locker"
-  ){
-    event.target.checked=false;
-    event.target.indeterminate=false;
-    setStatus("La linea è modificabile in PREPARAZIONE o SPOGLIATOIO");
-    syncRosterDisplayOptions();
-    return;
-  }
-
   const indexes=getSelectedOpponentIndexesForBlankLine();
 
   if(!indexes.length){
