@@ -1207,6 +1207,12 @@ body.field-view-mode .field-fullscreen-nav:disabled{opacity:.28}
   .player-tag.blank-opponent-line::after{border-bottom-color:#111!important}
 }
 
+
+#drawingDash{
+  accent-color:#f6c400;
+  touch-action:manipulation;
+}
+
 </style>
 
 <script async src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -1601,7 +1607,7 @@ body.field-view-mode .field-fullscreen-nav:disabled{opacity:.28}
 <input type="file" id="projectFile" accept=".json" hidden>
 
 <script>
-const STORAGE_KEY="setPieceBoardPro_v125";
+const STORAGE_KEY="setPieceBoardPro_v126";
 
 function safeStorageGet(key){
   try{
@@ -3649,7 +3655,9 @@ function renderDrawings(){
     d.headSize=Number(d.headSize)||drawingDefaults.headSize;
     d.opacity=Number.isFinite(Number(d.opacity))?Number(d.opacity):1;
     d.shapeMode=d.shapeMode||"both";
-    d.dashStyle=Number.isFinite(Number(d.dashStyle))?Number(d.dashStyle):0;
+    d.dashStyle=Number.isFinite(Number(d.dashStyle))
+      ? Math.max(0,Math.min(3,Number(d.dashStyle)))
+      : 0;
     ensureCurveControls(d);
     clampDrawing(d);
 
@@ -3811,7 +3819,35 @@ function renderDrawings(){
     visible.setAttribute("fill","none");
     visible.setAttribute("stroke",d.color);
     visible.setAttribute("stroke-width",d.width);
-    visible.setAttribute("stroke-linecap","butt");
+
+    /*
+      Tratteggio del solo corpo della freccia.
+      0 = continua
+      1 = tratto corto
+      2 = tratto medio
+      3 = puntinata
+    */
+    const dashStyle=Math.max(0,Math.min(3,Number(d.dashStyle)||0));
+    const dashPatterns={
+      0:"",
+      1:`${Math.max(9,d.width*2.2)} ${Math.max(7,d.width*1.7)}`,
+      2:`${Math.max(20,d.width*4.5)} ${Math.max(11,d.width*2.2)}`,
+      3:`${Math.max(2,d.width*.45)} ${Math.max(9,d.width*2.1)}`
+    };
+    const dashPattern=dashPatterns[dashStyle];
+
+    if(dashPattern){
+      visible.setAttribute("stroke-dasharray",dashPattern);
+      visible.style.strokeDasharray=dashPattern;
+    }else{
+      visible.removeAttribute("stroke-dasharray");
+      visible.style.strokeDasharray="none";
+    }
+
+    visible.setAttribute(
+      "stroke-linecap",
+      dashStyle===3 ? "round" : "butt"
+    );
     visible.setAttribute("stroke-linejoin","round");
     visible.setAttribute("shape-rendering","geometricPrecision");
     visible.setAttribute("filter","url(#arrowShadow)");
@@ -3829,7 +3865,7 @@ function renderDrawings(){
     );
     arrowHead.setAttribute("fill",d.color);
     arrowHead.removeAttribute("stroke-dasharray");
-    arrowHead.style.strokeDasharray="";
+    arrowHead.style.strokeDasharray="none";
     arrowHead.setAttribute("stroke","none");
     arrowHead.setAttribute("shape-rendering","geometricPrecision");
     arrowHead.setAttribute("filter","url(#arrowShadow)");
@@ -4268,8 +4304,29 @@ document.getElementById("drawingWidth").addEventListener("input",e=>applyDrawing
 document.getElementById("drawingHead").addEventListener("input",e=>applyDrawingStyleChange("headSize",Number(e.target.value)));
 document.getElementById("drawingCurve").addEventListener("input",e=>applyDrawingStyleChange("curveOffset",Number(e.target.value)));
 document.getElementById("drawingOpacity").addEventListener("input",e=>applyDrawingStyleChange("opacity",Number(e.target.value)));
-document.getElementById("drawingDash").addEventListener("input",e=>applyDrawingStyleChange("dashStyle",Number(e.target.value)));
-document.getElementById("drawingDash").addEventListener("change",e=>applyDrawingStyleChange("dashStyle",Number(e.target.value)));
+const drawingDashControl=document.getElementById("drawingDash");
+
+function updateDrawingDashFromControl(){
+  const value=Math.max(
+    0,
+    Math.min(3,Number(drawingDashControl.value)||0)
+  );
+
+  applyDrawingStyleChange("dashStyle",value);
+}
+
+drawingDashControl.addEventListener(
+  "input",
+  updateDrawingDashFromControl
+);
+drawingDashControl.addEventListener(
+  "change",
+  updateDrawingDashFromControl
+);
+drawingDashControl.addEventListener(
+  "pointerup",
+  updateDrawingDashFromControl
+);
 document.getElementById("shapeMode").addEventListener("change",e=>applyDrawingStyleChange("shapeMode",e.target.value));
 
 document.querySelectorAll(".drawing-preset").forEach(btn=>{
@@ -5810,7 +5867,7 @@ function getBackupPayload(){
       "acf-set-pieces-backup"
     ],
     app:"ACF Fiorentina - Set Pieces App",
-    appVersion:"v125",
+    appVersion:"v126",
     createdAt:new Date().toISOString(),
     currentPage:Number(currentPage)||0,
     state:cloneBackupValue(state),

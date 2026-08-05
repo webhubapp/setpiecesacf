@@ -43,14 +43,14 @@ NOVITÀ v117
 - Allinea V rinominato in Verticale
 
 
-CORREZIONE v125 - POSIZIONI INVARIATE
+CORREZIONE v126 - POSIZIONI INVARIATE
 - Rapporto del campo fissato a 1000 × 620 su Mac, iPad e fullscreen
 - Nessuna deformazione passando tra dispositivi
 - Nessun riallargamento entrando in modalità Campo intero
 - Coordinate di giocatori, frecce, forme, palloni e testi mantenute in percentuale
 
 
-NOVITÀ v125
+NOVITÀ v126
 - Dimensione predefinita delle maglie: 90%
 - Trascinamento più fluido di pallone e testi
 - Stessa anagrafica completa per Fiorentina e avversari
@@ -59,14 +59,14 @@ NOVITÀ v125
 - Controllo completo della sintassi JavaScript
 
 
-NOVITÀ v125
+NOVITÀ v126
 - Nuovo sfondo del campo basato sull'immagine campo.png
 - Vecchie linee CSS del campo disattivate
 - Coordinate e posizioni degli oggetti mantenute invariate
 - Compatibilità Mac, iPad, fullscreen, PNG e PDF
 
 
-NOVITÀ v125
+NOVITÀ v126
 - Movimento pallone più fluido su Mac e iPad
 - Movimento testo più fluido su Mac e iPad
 - Eliminati i rerender durante il trascinamento
@@ -74,7 +74,7 @@ NOVITÀ v125
 - Bloccato lo scorrimento involontario della pagina durante il drag
 
 
-NOVITÀ v125
+NOVITÀ v126
 - Flag Numero nel cerchio per Fiorentina e avversari
 - Opzione Avversari: linea tratteggiata da compilare a penna
 - Navigazione schema precedente/successivo in Campo intero
@@ -83,7 +83,7 @@ NOVITÀ v125
 - Nuove preferenze incluse nel backup
 
 
-NOVITÀ v125
+NOVITÀ v126
 - Linea avversari continua anziché tratteggiata
 - Linea avversari spostata più in basso
 - Flag numero applicato soltanto ai giocatori selezionati
@@ -91,8 +91,17 @@ NOVITÀ v125
 - Stato misto del flag quando la selezione contiene giocatori con impostazioni differenti
 
 
-NOVITÀ v125
+NOVITÀ v126
 - Flag Linea nei selezionati applicato soltanto agli avversari selezionati
 - Possibilità di mostrare o nascondere la linea per singoli avversari o gruppi
 - Stato intermedio del flag per selezioni miste
 - Il flag resta disabilitato se non è selezionato alcun avversario
+
+
+FIX v126 - TRATTEGGIO FRECCE
+- Applicato realmente stroke-dasharray al corpo di frecce dritte e curve
+- Punta della freccia sempre piena
+- Quattro livelli: continua, tratto corto, tratto medio, puntinata
+- Aggiornamento immediato del cursore anche su iPad
+- Valore salvato nei progetti e nei backup
+- Compatibilità con frecce create nelle versioni precedenti
