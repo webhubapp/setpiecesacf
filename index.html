@@ -1749,7 +1749,7 @@ body.field-view-mode #board{
 <input type="file" id="projectFile" accept=".json" hidden>
 
 <script>
-const STORAGE_KEY="setPieceBoardPro_v136";
+const STORAGE_KEY="setPieceBoardPro_v137";
 
 function safeStorageGet(key){
   try{
@@ -2305,7 +2305,9 @@ function syncRosterDisplayOptions(){
 
   if(blankLine){
     const opponentIndexes=getSelectedOpponentIndexesForBlankLine();
-    const freeMode=state.presentationMode==="normal";
+    const freeMode=
+      state.presentationMode==="normal" ||
+      state.presentationMode==="locker";
 
     blankLine.disabled=!freeMode || opponentIndexes.length===0;
     const lineValues=opponentIndexes.map(index=>
@@ -3068,7 +3070,7 @@ function renderPlayers(){
     );
 
     const effectiveShowOpponentLine=
-      state.presentationMode==="normal" &&
+      (state.presentationMode==="normal" || state.presentationMode==="locker") &&
       pl.team==="away" &&
       schemaShowOpponentLine;
 
@@ -3097,15 +3099,13 @@ function renderPlayers(){
     el.innerHTML=`
       ${jerseySvg}
       <div class="player-tag${effectiveShowOpponentLine ? " blank-opponent-line" : ""}">${
-        state.presentationMode==="locker"
-          ? ""
-          : state.presentationMode==="bench"
-            ? escapeHtml(String(pl.lastName||pl.name||pl.firstName||"").toUpperCase())
-            : (
-                effectiveShowOpponentLine
-                  ? ""
-                  : escapeHtml(pl.showLastName===false?"":String(pl.lastName||pl.name||pl.firstName||"").toUpperCase())
-              )
+        state.presentationMode==="bench"
+          ? escapeHtml(String(pl.lastName||pl.name||pl.firstName||"").toUpperCase())
+          : effectiveShowOpponentLine
+            ? ""
+            : state.presentationMode==="locker"
+              ? ""
+              : escapeHtml(pl.showLastName===false?"":String(pl.lastName||pl.name||pl.firstName||"").toUpperCase())
       }</div>
     `;
     el.title="Trascina per spostare · doppio clic per aprire l’anagrafica";
@@ -3222,7 +3222,7 @@ function applyGlobalPlayerDisplayMode(mode){
     normalizedMode==="bench"
       ? "Modalità PANCHINA attiva su tutti gli schemi"
       : normalizedMode==="locker"
-        ? "Modalità SPOGLIATOIO attiva su tutti gli schemi"
+        ? "Modalità SPOGLIATOIO: nomi e numeri nascosti, linee selettive disponibili"
         : "Modalità PREPARAZIONE: modifiche libere riattivate"
   );
 }
@@ -6146,7 +6146,7 @@ function getBackupPayload(){
       "acf-set-pieces-backup"
     ],
     app:"ACF Fiorentina - Set Pieces App",
-    appVersion:"v136",
+    appVersion:"v137",
     createdAt:new Date().toISOString(),
     currentPage:Number(currentPage)||0,
     state:cloneBackupValue(state),
@@ -6983,10 +6983,13 @@ document.getElementById("showShirtNumbers").addEventListener("change",event=>{
   );
 });
 document.getElementById("opponentBlankLine").addEventListener("change",event=>{
-  if(state.presentationMode!=="normal"){
+  if(
+    state.presentationMode!=="normal" &&
+    state.presentationMode!=="locker"
+  ){
     event.target.checked=false;
     event.target.indeterminate=false;
-    setStatus("Attiva PREPARAZIONE per modificare liberamente le linee");
+    setStatus("La linea è modificabile in PREPARAZIONE o SPOGLIATOIO");
     syncRosterDisplayOptions();
     return;
   }
