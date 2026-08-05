@@ -1041,32 +1041,33 @@ body.field-view-mode{
 }
 body.field-view-mode .board-shell{
   position:fixed!important;
-  inset:0!important;
+  left:0!important;
+  top:0!important;
+  right:auto!important;
+  bottom:auto!important;
   z-index:10000!important;
-  width:100vw!important;
-  height:100vh!important;
+  width:100dvw!important;
+  height:100dvh!important;
   min-width:0!important;
   min-height:0!important;
   max-width:none!important;
   max-height:none!important;
   margin:0!important;
-  padding:
-    max(18px,env(safe-area-inset-top))
-    max(18px,env(safe-area-inset-right))
-    max(18px,env(safe-area-inset-bottom))
-    max(18px,env(safe-area-inset-left))!important;
-  display:flex!important;
-  align-items:center!important;
-  justify-content:center!important;
+  padding:0!important;
+  display:block!important;
   background:#fff!important;
   box-sizing:border-box!important;
   overflow:hidden!important;
   aspect-ratio:auto!important;
+  contain:strict!important;
+  isolation:isolate!important;
 }
 body.field-view-mode #board{
   position:absolute!important;
-  left:0;
-  top:0;
+  left:0!important;
+  top:0!important;
+  right:auto!important;
+  bottom:auto!important;
   inset:auto!important;
   width:1000px!important;
   height:620px!important;
@@ -1075,9 +1076,9 @@ body.field-view-mode #board{
   max-width:1000px!important;
   max-height:620px!important;
   aspect-ratio:auto!important;
-  flex:none!important;
-  overflow:hidden!important;
   transform-origin:top left!important;
+  overflow:hidden!important;
+  flex:none!important;
 }
 body.field-view-mode .field-fullscreen-exit{
   display:block;
@@ -1252,6 +1253,19 @@ body.field-view-mode .field-fullscreen-nav:disabled{opacity:.28}
 }
 body.field-view-mode .board-shell{
   isolation:isolate;
+}
+
+
+body.field-view-mode .field-fullscreen-exit,
+body.field-view-mode .field-fullscreen-nav{
+  position:fixed!important;
+  z-index:10020!important;
+}
+body.field-view-mode .field-fullscreen-nav.prev{
+  left:12px!important;
+}
+body.field-view-mode .field-fullscreen-nav.next{
+  right:12px!important;
 }
 
 </style>
@@ -1648,7 +1662,7 @@ body.field-view-mode .board-shell{
 <input type="file" id="projectFile" accept=".json" hidden>
 
 <script>
-const STORAGE_KEY="setPieceBoardPro_v129";
+const STORAGE_KEY="setPieceBoardPro_v130";
 
 function safeStorageGet(key){
   try{
@@ -5908,7 +5922,7 @@ function getBackupPayload(){
       "acf-set-pieces-backup"
     ],
     app:"ACF Fiorentina - Set Pieces App",
-    appVersion:"v129",
+    appVersion:"v130",
     createdAt:new Date().toISOString(),
     currentPage:Number(currentPage)||0,
     state:cloneBackupValue(state),
@@ -6500,42 +6514,103 @@ function toggleFieldLock(){
 
 const BOARD_LOGICAL_WIDTH=1000;
 const BOARD_LOGICAL_HEIGHT=620;
+const FULLSCREEN_SIDE_SAFE=76;
+const FULLSCREEN_VERTICAL_SAFE=18;
+
 let boardRenderScale=1;
 let boardRenderFrame=0;
+
+function getLiveViewportSize(){
+  const viewport=window.visualViewport;
+
+  return {
+    width:Math.max(
+      1,
+      viewport?.width||document.documentElement.clientWidth||window.innerWidth
+    ),
+    height:Math.max(
+      1,
+      viewport?.height||document.documentElement.clientHeight||window.innerHeight
+    )
+  };
+}
 
 function fitLogicalBoard(){
   const shell=document.querySelector(".board-shell");
   const board=document.getElementById("board");
   if(!shell||!board)return;
 
-  const styles=getComputedStyle(shell);
-  const paddingLeft=parseFloat(styles.paddingLeft)||0;
-  const paddingRight=parseFloat(styles.paddingRight)||0;
-  const paddingTop=parseFloat(styles.paddingTop)||0;
-  const paddingBottom=parseFloat(styles.paddingBottom)||0;
+  let availableWidth;
+  let availableHeight;
+  let offsetLeft;
+  let offsetTop;
 
-  const availableWidth=Math.max(
-    1,
-    shell.clientWidth-paddingLeft-paddingRight
-  );
-  const availableHeight=Math.max(
-    1,
-    shell.clientHeight-paddingTop-paddingBottom
-  );
+  if(fieldViewMode){
+    const viewport=getLiveViewportSize();
 
-  const scaleX=availableWidth/BOARD_LOGICAL_WIDTH;
-  const scaleY=availableHeight/BOARD_LOGICAL_HEIGHT;
+    /*
+      Lo spazio laterale protegge il campo dalle frecce di navigazione.
+      La scala è sempre uniforme: nessuna deformazione e nessun taglio.
+    */
+    availableWidth=Math.max(
+      1,
+      viewport.width-FULLSCREEN_SIDE_SAFE*2
+    );
+    availableHeight=Math.max(
+      1,
+      viewport.height-FULLSCREEN_VERTICAL_SAFE*2
+    );
 
-  boardRenderScale=Math.max(.05,Math.min(scaleX,scaleY));
+    boardRenderScale=Math.max(
+      .05,
+      Math.min(
+        availableWidth/BOARD_LOGICAL_WIDTH,
+        availableHeight/BOARD_LOGICAL_HEIGHT
+      )
+    );
 
-  const renderedWidth=BOARD_LOGICAL_WIDTH*boardRenderScale;
-  const renderedHeight=BOARD_LOGICAL_HEIGHT*boardRenderScale;
+    const renderedWidth=BOARD_LOGICAL_WIDTH*boardRenderScale;
+    const renderedHeight=BOARD_LOGICAL_HEIGHT*boardRenderScale;
 
-  const left=paddingLeft+(availableWidth-renderedWidth)/2;
-  const top=paddingTop+(availableHeight-renderedHeight)/2;
+    offsetLeft=Math.round((viewport.width-renderedWidth)/2);
+    offsetTop=Math.round((viewport.height-renderedHeight)/2);
+  }else{
+    const styles=getComputedStyle(shell);
+    const paddingLeft=parseFloat(styles.paddingLeft)||0;
+    const paddingRight=parseFloat(styles.paddingRight)||0;
+    const paddingTop=parseFloat(styles.paddingTop)||0;
+    const paddingBottom=parseFloat(styles.paddingBottom)||0;
 
-  board.style.left=`${Math.max(paddingLeft,left)}px`;
-  board.style.top=`${Math.max(paddingTop,top)}px`;
+    availableWidth=Math.max(
+      1,
+      shell.clientWidth-paddingLeft-paddingRight
+    );
+    availableHeight=Math.max(
+      1,
+      shell.clientHeight-paddingTop-paddingBottom
+    );
+
+    boardRenderScale=Math.max(
+      .05,
+      Math.min(
+        availableWidth/BOARD_LOGICAL_WIDTH,
+        availableHeight/BOARD_LOGICAL_HEIGHT
+      )
+    );
+
+    const renderedWidth=BOARD_LOGICAL_WIDTH*boardRenderScale;
+    const renderedHeight=BOARD_LOGICAL_HEIGHT*boardRenderScale;
+
+    offsetLeft=Math.round(
+      paddingLeft+(availableWidth-renderedWidth)/2
+    );
+    offsetTop=Math.round(
+      paddingTop+(availableHeight-renderedHeight)/2
+    );
+  }
+
+  board.style.left=`${Math.max(0,offsetLeft)}px`;
+  board.style.top=`${Math.max(0,offsetTop)}px`;
   board.style.transform=`scale(${boardRenderScale})`;
 }
 
@@ -6563,15 +6638,28 @@ function installLogicalBoardRenderer(){
     {passive:true}
   );
 
+  window.visualViewport?.addEventListener(
+    "resize",
+    scheduleLogicalBoardFit,
+    {passive:true}
+  );
+
+  window.visualViewport?.addEventListener(
+    "scroll",
+    scheduleLogicalBoardFit,
+    {passive:true}
+  );
+
   window.addEventListener("orientationchange",()=>{
-    setTimeout(scheduleLogicalBoardFit,60);
-    setTimeout(scheduleLogicalBoardFit,220);
-    setTimeout(scheduleLogicalBoardFit,500);
+    setTimeout(scheduleLogicalBoardFit,40);
+    setTimeout(scheduleLogicalBoardFit,180);
+    setTimeout(scheduleLogicalBoardFit,450);
   },{passive:true});
 
   document.addEventListener("visibilitychange",()=>{
     if(document.visibilityState==="visible"){
-      setTimeout(scheduleLogicalBoardFit,40);
+      setTimeout(scheduleLogicalBoardFit,30);
+      setTimeout(scheduleLogicalBoardFit,180);
     }
   });
 
@@ -6593,8 +6681,9 @@ function setFieldViewMode(enabled){
     updateFullscreenNavigation();
   });
 
-  setTimeout(scheduleLogicalBoardFit,80);
-  setTimeout(scheduleLogicalBoardFit,260);
+  setTimeout(scheduleLogicalBoardFit,30);
+  setTimeout(scheduleLogicalBoardFit,120);
+  setTimeout(scheduleLogicalBoardFit,320);
 }
 
 function toggleFieldViewMode(){
