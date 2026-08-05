@@ -1315,6 +1315,14 @@ body.field-view-mode #board{
   border-color:#615076;
   background:#2a2038;
 }
+.presentation-mode-btn.preparation{
+  border-color:#7b5c2a;
+  background:#3b2d18;
+}
+.substitution-launch-btn.shifted{
+  margin-left:28px;
+  min-width:150px;
+}
 .presentation-mode-btn.active{
   border-color:#9be85d!important;
   background:#8bd450!important;
@@ -1326,9 +1334,13 @@ body.field-view-mode #board{
     gap:5px;
   }
   .presentation-mode-btn{
-    min-width:92px;
-    padding-inline:9px;
-    font-size:10px;
+    min-width:88px;
+    padding-inline:8px;
+    font-size:9px;
+  }
+  .substitution-launch-btn.shifted{
+    margin-left:12px;
+    min-width:126px;
   }
 }
 
@@ -1464,8 +1476,9 @@ body.field-view-mode #board{
     <div class="current-title" id="currentTitle">Schema 1</div>
     <div class="presentation-mode-actions" aria-label="Modalità visualizzazione giocatori">
       <button type="button" class="btn presentation-mode-btn bench" id="benchModeBtn">PANCHINA</button>
-      <button type="button" class="btn substitution-launch-btn" id="openSubstitutionBtn">Sostituzione</button>
       <button type="button" class="btn presentation-mode-btn dressing-room" id="dressingRoomModeBtn">SPOGLIATOIO</button>
+      <button type="button" class="btn presentation-mode-btn preparation" id="preparationModeBtn">PREPARAZIONE</button>
+      <button type="button" class="btn substitution-launch-btn shifted" id="openSubstitutionBtn">Sostituzione</button>
     </div>
     <div class="status" id="status" aria-live="polite"></div>
     <div class="lineup-counters" aria-label="Giocatori in campo">
@@ -1736,7 +1749,7 @@ body.field-view-mode #board{
 <input type="file" id="projectFile" accept=".json" hidden>
 
 <script>
-const STORAGE_KEY="setPieceBoardPro_v135";
+const STORAGE_KEY="setPieceBoardPro_v136";
 
 function safeStorageGet(key){
   try{
@@ -2266,7 +2279,8 @@ function syncRosterDisplayOptions(){
 
   if(numbers){
     const indexes=getSelectedPlayerIndexesForNumberToggle();
-    numbers.disabled=indexes.length===0;
+    const freeMode=state.presentationMode==="normal";
+    numbers.disabled=!freeMode || indexes.length===0;
     const numberValues=indexes.map(index=>
       getEffectivePlayerDisplayValue(
         index,
@@ -2291,8 +2305,9 @@ function syncRosterDisplayOptions(){
 
   if(blankLine){
     const opponentIndexes=getSelectedOpponentIndexesForBlankLine();
+    const freeMode=state.presentationMode==="normal";
 
-    blankLine.disabled=opponentIndexes.length===0;
+    blankLine.disabled=!freeMode || opponentIndexes.length===0;
     const lineValues=opponentIndexes.map(index=>
       getEffectivePlayerDisplayValue(
         index,
@@ -3174,21 +3189,28 @@ function clearAllSelections(){
 function updatePresentationModeButtons(){
   const bench=document.getElementById("benchModeBtn");
   const dressing=document.getElementById("dressingRoomModeBtn");
+  const preparation=document.getElementById("preparationModeBtn");
 
   bench?.classList.toggle("active",state.presentationMode==="bench");
   dressing?.classList.toggle("active",state.presentationMode==="locker");
+  preparation?.classList.toggle("active",state.presentationMode==="normal");
 }
 
 function applyGlobalPlayerDisplayMode(mode){
-  const normalizedMode=mode==="bench" ? "bench" : "locker";
+  const normalizedMode=
+    mode==="bench"
+      ? "bench"
+      : mode==="locker"
+        ? "locker"
+        : "normal";
 
   pushHistory();
   state.presentationMode=normalizedMode;
 
   /*
-    È una modalità globale del progetto:
-    vale automaticamente per tutti gli schemi esistenti,
-    per quelli duplicati e per quelli creati successivamente.
+    PANCHINA e SPOGLIATOIO sono modalità globali.
+    PREPARAZIONE riattiva la gestione libera schema per schema:
+    numero, cognome, linea e cerchio tornano modificabili manualmente.
   */
   renderPlayers();
   renderRoster();
@@ -3199,7 +3221,9 @@ function applyGlobalPlayerDisplayMode(mode){
   setStatus(
     normalizedMode==="bench"
       ? "Modalità PANCHINA attiva su tutti gli schemi"
-      : "Modalità SPOGLIATOIO attiva su tutti gli schemi"
+      : normalizedMode==="locker"
+        ? "Modalità SPOGLIATOIO attiva su tutti gli schemi"
+        : "Modalità PREPARAZIONE: modifiche libere riattivate"
   );
 }
 
@@ -6122,7 +6146,7 @@ function getBackupPayload(){
       "acf-set-pieces-backup"
     ],
     app:"ACF Fiorentina - Set Pieces App",
-    appVersion:"v135",
+    appVersion:"v136",
     createdAt:new Date().toISOString(),
     currentPage:Number(currentPage)||0,
     state:cloneBackupValue(state),
@@ -6923,6 +6947,14 @@ document.getElementById("board").addEventListener("dblclick",event=>{
 
 
 document.getElementById("showShirtNumbers").addEventListener("change",event=>{
+  if(state.presentationMode!=="normal"){
+    event.target.checked=false;
+    event.target.indeterminate=false;
+    setStatus("Attiva PREPARAZIONE per modificare liberamente i numeri");
+    syncRosterDisplayOptions();
+    return;
+  }
+
   const indexes=getSelectedPlayerIndexesForNumberToggle();
 
   if(!indexes.length){
@@ -6951,6 +6983,14 @@ document.getElementById("showShirtNumbers").addEventListener("change",event=>{
   );
 });
 document.getElementById("opponentBlankLine").addEventListener("change",event=>{
+  if(state.presentationMode!=="normal"){
+    event.target.checked=false;
+    event.target.indeterminate=false;
+    setStatus("Attiva PREPARAZIONE per modificare liberamente le linee");
+    syncRosterDisplayOptions();
+    return;
+  }
+
   const indexes=getSelectedOpponentIndexesForBlankLine();
 
   if(!indexes.length){
@@ -6988,6 +7028,11 @@ document.getElementById("benchModeBtn").addEventListener(
 document.getElementById("dressingRoomModeBtn").addEventListener(
   "click",
   ()=>applyGlobalPlayerDisplayMode("locker")
+);
+
+document.getElementById("preparationModeBtn").addEventListener(
+  "click",
+  ()=>applyGlobalPlayerDisplayMode("normal")
 );
 
 document.getElementById("touchUndoBtn").addEventListener("click",undo);
