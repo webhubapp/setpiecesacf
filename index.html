@@ -46,7 +46,7 @@ button{cursor:pointer}
 .field-wrap{min-width:0;min-height:0;padding:10px 14px 12px;display:flex;flex-direction:column;gap:8px;background:#25272a}
 .canvas-header{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .current-title{cursor:text;font-size:12px;font-weight:800}.status{font-size:11px;color:var(--muted)}
-.board-shell{position:relative;flex:1;min-height:620px;border-radius:0;overflow:hidden;border:0;background:#fff;width:100%;margin:0 auto;aspect-ratio:1.5/1;box-shadow:0 0 0 1px #3a3d42}
+.board-shell{position:relative;flex:1;min-height:620px;border-radius:0;overflow:hidden;border:0;background:#fff;width:100%;margin:0 auto;aspect-ratio:1000 / 620;box-shadow:0 0 0 1px #3a3d42}
 #board{position:absolute;inset:0;touch-action:none;user-select:none}
 .pitch{
   position:absolute;
@@ -569,7 +569,7 @@ display:none!important;
     width:100%;
     height:auto;
     min-height:0;
-    aspect-ratio:1.5 / 1;
+    aspect-ratio:1000 / 620;
     max-height:calc(100vh - 150px);
   }
 
@@ -1014,6 +1014,10 @@ body.field-view-mode .board-shell{
   z-index:10000!important;
   width:100vw!important;
   height:100vh!important;
+  min-width:0!important;
+  min-height:0!important;
+  max-width:none!important;
+  max-height:none!important;
   margin:0!important;
   padding:
     max(18px,env(safe-area-inset-top))
@@ -1026,17 +1030,21 @@ body.field-view-mode .board-shell{
   background:#fff!important;
   box-sizing:border-box!important;
   overflow:hidden!important;
+  aspect-ratio:auto!important;
 }
 body.field-view-mode #board{
+  position:relative!important;
+  inset:auto!important;
   width:min(
     calc(100vw - max(36px,env(safe-area-inset-left)) - max(36px,env(safe-area-inset-right))),
-    calc((100vh - max(36px,env(safe-area-inset-top)) - max(36px,env(safe-area-inset-bottom))) * 1.6129)
+    calc((100vh - max(36px,env(safe-area-inset-top)) - max(36px,env(safe-area-inset-bottom))) * 1.6129032258)
   )!important;
   height:auto!important;
   aspect-ratio:1000 / 620!important;
   max-width:none!important;
   max-height:none!important;
-  flex:none!important;
+  flex:0 0 auto!important;
+  overflow:hidden!important;
 }
 body.field-view-mode .field-fullscreen-exit{
   display:block;
@@ -1070,6 +1078,21 @@ body.field-locked #board::after{
     min-height:42px;
     padding:9px 14px;
     font-size:12px;
+  }
+}
+
+
+/* Geometria unica del campo: 1000 × 620 su Mac, iPad e fullscreen */
+.board-shell{
+  aspect-ratio:1000 / 620!important;
+}
+#board{
+  aspect-ratio:1000 / 620;
+  transform:none!important;
+}
+@media (min-width:761px) and (max-width:1400px){
+  .board-shell{
+    aspect-ratio:1000 / 620!important;
   }
 }
 
@@ -1456,7 +1479,7 @@ body.field-locked #board::after{
 <input type="file" id="projectFile" accept=".json" hidden>
 
 <script>
-const STORAGE_KEY="setPieceBoardPro_v118";
+const STORAGE_KEY="setPieceBoardPro_v119";
 
 function safeStorageGet(key){
   try{
@@ -5573,7 +5596,7 @@ function getBackupPayload(){
       "acf-set-pieces-backup"
     ],
     app:"ACF Fiorentina - Set Pieces App",
-    appVersion:"v118",
+    appVersion:"v119",
     createdAt:new Date().toISOString(),
     currentPage:Number(currentPage)||0,
     state:cloneBackupValue(state),
@@ -6166,11 +6189,13 @@ function setFieldViewMode(enabled){
   fieldViewMode=Boolean(enabled);
   document.body.classList.toggle("field-view-mode",fieldViewMode);
 
+  /*
+    Il campo mantiene sempre il rapporto 1000 × 620.
+    Le coordinate percentuali non vengono ricalcolate né mutate.
+  */
   requestAnimationFrame(()=>{
-    renderPlayers();
-    renderBalls();
-    renderTexts();
-    renderDrawings();
+    refreshSelectionVisuals();
+    refreshObjectSelectionVisuals();
   });
 }
 

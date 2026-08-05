@@ -41,3 +41,10 @@ NOVITÀ v117
 - Pulsante Torna indietro, equivalente a Command+Z
 - Allinea H rinominato in Orizzontale
 - Allinea V rinominato in Verticale
+
+
+CORREZIONE v119 - POSIZIONI INVARIATE
+- Rapporto del campo fissato a 1000 × 620 su Mac, iPad e fullscreen
+- Nessuna deformazione passando tra dispositivi
+- Nessun riallargamento entrando in modalità Campo intero
+- Coordinate di giocatori, frecce, forme, palloni e testi mantenute in percentuale
