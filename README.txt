@@ -241,8 +241,15 @@ NOVITÀ v141
 - Linea sotto la maglia ridotta del 35%
 
 
-NOVITÀ v143
+NOVITÀ v144
 - Pulsante Sostituzione abbassato ulteriormente del 35%
 - Linea sotto le maglie Fiorentina ridotta del 40%
 - Linea avversari lasciata invariata
 - Nessuna modifica alla logica dell'app
+
+
+NOVITÀ v144
+- Pulsante Sostituzione abbassato ulteriormente del 30%
+- Linea sotto le maglie abbassata di circa 7 px
+- Colore linea aggiornato a #D0CFD7
+- Lunghezze linea Fiorentina e avversari mantenute come in v143

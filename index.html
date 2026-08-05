@@ -1211,8 +1211,8 @@ body.field-locked #board::after{
   position:absolute;
   left:0;
   right:0;
-  top:7px;
-  border-bottom:1.6px solid #111;
+  top: 14px;
+  border-bottom:1.6px solid #D0CFD7;
 }
 .field-fullscreen-nav{
   display:none;
@@ -1237,7 +1237,7 @@ body.field-locked #board::after{
 body.field-view-mode .field-fullscreen-nav{display:block}
 body.field-view-mode .field-fullscreen-nav:disabled{opacity:.28}
 @media print{
-  .player-tag.blank-opponent-line::after{border-bottom-color:#111!important}
+  .player-tag.blank-opponent-line::after{border-bottom-color:#D0CFD7!important}
 }
 
 
@@ -1561,7 +1561,7 @@ body.field-view-mode #board{
 .topbar-substitution-slot{
   position:absolute;
   left:50%;
-  top: 67.5%;
+  top: 77.5%;
   transform:translate(-50%,-50%);
   display:flex;
   align-items:center;
@@ -2023,7 +2023,7 @@ body.field-view-mode #board{
 <input type="file" id="projectFile" accept=".json" hidden>
 
 <script>
-const STORAGE_KEY="setPieceBoardPro_v143";
+const STORAGE_KEY="setPieceBoardPro_v144";
 
 function safeStorageGet(key){
   try{
@@ -6426,7 +6426,7 @@ function getBackupPayload(){
       "acf-set-pieces-backup"
     ],
     app:"ACF Fiorentina - Set Pieces App",
-    appVersion:"v143",
+    appVersion:"v144",
     createdAt:new Date().toISOString(),
     currentPage:Number(currentPage)||0,
     state:cloneBackupValue(state),
