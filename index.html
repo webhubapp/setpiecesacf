@@ -1046,8 +1046,8 @@ body.field-view-mode .board-shell{
   right:auto!important;
   bottom:auto!important;
   z-index:10000!important;
-  width:100dvw!important;
-  height:100dvh!important;
+  width:100vw!important;
+  height:100vh!important;
   min-width:0!important;
   min-height:0!important;
   max-width:none!important;
@@ -1266,6 +1266,16 @@ body.field-view-mode .field-fullscreen-nav.prev{
 }
 body.field-view-mode .field-fullscreen-nav.next{
   right:12px!important;
+}
+
+
+body.field-view-mode{
+  width:100vw!important;
+  height:100vh!important;
+  overflow:hidden!important;
+}
+body.field-view-mode #board{
+  box-shadow:0 0 0 1px rgba(0,0,0,.08);
 }
 
 </style>
@@ -1662,7 +1672,7 @@ body.field-view-mode .field-fullscreen-nav.next{
 <input type="file" id="projectFile" accept=".json" hidden>
 
 <script>
-const STORAGE_KEY="setPieceBoardPro_v130";
+const STORAGE_KEY="setPieceBoardPro_v131";
 
 function safeStorageGet(key){
   try{
@@ -5922,7 +5932,7 @@ function getBackupPayload(){
       "acf-set-pieces-backup"
     ],
     app:"ACF Fiorentina - Set Pieces App",
-    appVersion:"v130",
+    appVersion:"v131",
     createdAt:new Date().toISOString(),
     currentPage:Number(currentPage)||0,
     state:cloneBackupValue(state),
@@ -6514,23 +6524,23 @@ function toggleFieldLock(){
 
 const BOARD_LOGICAL_WIDTH=1000;
 const BOARD_LOGICAL_HEIGHT=620;
-const FULLSCREEN_SIDE_SAFE=76;
-const FULLSCREEN_VERTICAL_SAFE=18;
+const FULLSCREEN_SIDE_SAFE=96;
+const FULLSCREEN_VERTICAL_SAFE=58;
 
 let boardRenderScale=1;
 let boardRenderFrame=0;
 
 function getLiveViewportSize(){
-  const viewport=window.visualViewport;
+  const root=document.documentElement;
 
   return {
     width:Math.max(
       1,
-      viewport?.width||document.documentElement.clientWidth||window.innerWidth
+      root.clientWidth||window.innerWidth
     ),
     height:Math.max(
       1,
-      viewport?.height||document.documentElement.clientHeight||window.innerHeight
+      root.clientHeight||window.innerHeight
     )
   };
 }
@@ -6568,6 +6578,12 @@ function fitLogicalBoard(){
         availableHeight/BOARD_LOGICAL_HEIGHT
       )
     );
+
+    /*
+      Piccolo margine aggiuntivo per evitare qualsiasi taglio dovuto
+      all'arrotondamento dei pixel o alle barre dinamiche del browser.
+    */
+    boardRenderScale*=0.965;
 
     const renderedWidth=BOARD_LOGICAL_WIDTH*boardRenderScale;
     const renderedHeight=BOARD_LOGICAL_HEIGHT*boardRenderScale;
