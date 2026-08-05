@@ -1,4 +1,4 @@
-const CACHE_NAME = "acf-set-pieces-v123";
+const CACHE_NAME = "acf-set-pieces-v124";
 const APP_SHELL = [
   "./",
   "./index.html",

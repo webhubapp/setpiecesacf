@@ -1167,7 +1167,7 @@ body.field-locked #board::after{
   pointer-events:none;
 }
 .player-tag.blank-opponent-line{
-  top:56px;
+  top:60px;
   width:74px;
   height:14px;
   color:transparent!important;
@@ -1179,7 +1179,7 @@ body.field-locked #board::after{
   left:0;
   right:0;
   top:7px;
-  border-bottom:1.6px dashed #111;
+  border-bottom:1.6px solid #111;
 }
 .field-fullscreen-nav{
   display:none;
@@ -1400,7 +1400,7 @@ body.field-view-mode .field-fullscreen-nav:disabled{opacity:.28}
       </div>
       <label class="roster-option-toggle">
         <input type="checkbox" id="showShirtNumbers">
-        <span>Numero nel cerchio</span>
+        <span>Numero nei selezionati</span>
       </label>
       <label class="roster-option-toggle">
         <input type="checkbox" id="opponentBlankLine">
@@ -1601,7 +1601,7 @@ body.field-view-mode .field-fullscreen-nav:disabled{opacity:.28}
 <input type="file" id="projectFile" accept=".json" hidden>
 
 <script>
-const STORAGE_KEY="setPieceBoardPro_v123";
+const STORAGE_KEY="setPieceBoardPro_v124";
 
 function safeStorageGet(key){
   try{
@@ -1918,7 +1918,6 @@ function load(){
     if(raw)state=JSON.parse(raw);
   }catch(e){}
   if(!state.playerScale)state.playerScale=.90;
-  if(typeof state.showShirtNumbers!=="boolean")state.showShirtNumbers=false;
   if(typeof state.opponentBlankLine!=="boolean")state.opponentBlankLine=false;
   if(state.homeChestCircle===undefined)state.homeChestCircle=true;
   if(state.awayChestCircle===undefined)state.awayChestCircle=false;
@@ -2022,6 +2021,12 @@ function ensurePlayerRoles(){
 
   apply(state.roster);
   apply(state.homeRosterTemplate);
+
+  const applyNumbers=list=>Array.isArray(list)&&list.forEach(player=>{
+    if(typeof player.showShirtNumber!=="boolean")player.showShirtNumber=false;
+  });
+  applyNumbers(state.roster);
+  applyNumbers(state.homeRosterTemplate);
 }
 
 
@@ -2056,10 +2061,41 @@ function fixLegacyOpponentTenName(){
 }
 
 
+function getSelectedPlayerIndexesForNumberToggle(){
+  const indexes=new Set();
+
+  selectedPlayers.forEach(index=>{
+    if(state.roster[index])indexes.add(index);
+  });
+
+  selectedRosterPlayers.forEach(index=>{
+    if(state.roster[index])indexes.add(index);
+  });
+
+  return [...indexes];
+}
+
 function syncRosterDisplayOptions(){
   const numbers=document.getElementById("showShirtNumbers");
   const blankLine=document.getElementById("opponentBlankLine");
-  if(numbers)numbers.checked=Boolean(state.showShirtNumbers);
+
+  if(numbers){
+    const indexes=getSelectedPlayerIndexesForNumberToggle();
+    numbers.disabled=indexes.length===0;
+    numbers.indeterminate=
+      indexes.length>0 &&
+      indexes.some(index=>state.roster[index].showShirtNumber===true) &&
+      indexes.some(index=>state.roster[index].showShirtNumber!==true);
+
+    numbers.checked=
+      indexes.length>0 &&
+      indexes.every(index=>state.roster[index].showShirtNumber===true);
+
+    numbers.title=indexes.length
+      ? "Mostra o nasconde il numero nei giocatori selezionati"
+      : "Seleziona almeno un giocatore";
+  }
+
   if(blankLine)blankLine.checked=Boolean(state.opponentBlankLine);
 }
 
@@ -2764,7 +2800,7 @@ function renderPlayers(){
       :"";
 
     const visibleNumber=(
-      state.showShirtNumbers &&
+      pl.showShirtNumber===true &&
       pl.showChestCircle!==false &&
       pl.number!==0 &&
       pl.number!==null &&
@@ -2923,6 +2959,8 @@ function refreshSelectionVisuals(){
   updateLineupCounters();
 
   updateSubstitutionButton();
+
+  syncRosterDisplayOptions();
 }
 function selectOnly(index){
   selectedPlayers.clear();
@@ -5743,7 +5781,7 @@ function getBackupPayload(){
       "acf-set-pieces-backup"
     ],
     app:"ACF Fiorentina - Set Pieces App",
-    appVersion:"v123",
+    appVersion:"v124",
     createdAt:new Date().toISOString(),
     currentPage:Number(currentPage)||0,
     state:cloneBackupValue(state),
@@ -6365,9 +6403,32 @@ document.getElementById("board").addEventListener("dblclick",event=>{
 
 
 document.getElementById("showShirtNumbers").addEventListener("change",event=>{
-  state.showShirtNumbers=event.target.checked;
+  const indexes=getSelectedPlayerIndexesForNumberToggle();
+
+  if(!indexes.length){
+    event.target.checked=false;
+    event.target.indeterminate=false;
+    setStatus("Seleziona almeno un giocatore");
+    return;
+  }
+
+  pushHistory();
+
+  indexes.forEach(index=>{
+    state.roster[index].showShirtNumber=event.target.checked;
+  });
+
+  updateHomeRosterTemplate();
   renderPlayers();
+  renderRoster();
+  syncRosterDisplayOptions();
   save(false);
+
+  setStatus(
+    event.target.checked
+      ? "Numero mostrato nei giocatori selezionati"
+      : "Numero nascosto nei giocatori selezionati"
+  );
 });
 document.getElementById("opponentBlankLine").addEventListener("change",event=>{
   state.opponentBlankLine=event.target.checked;
