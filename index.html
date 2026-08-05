@@ -1189,7 +1189,7 @@ body.field-locked #board::after{
     <button type="button" class="archive-main-btn" id="openSavedSchemesBtn" style="margin-top:8px;background:linear-gradient(180deg,#293848,#1d2a38)">Database ACF</button>
     <button type="button" class="archive-main-btn backup-export-btn" id="exportBackupBtn" style="margin-top:8px">Esporta backup</button>
     <button type="button" class="archive-main-btn backup-import-btn" id="importBackupBtn" style="margin-top:8px">Importa backup</button>
-    <input type="file" id="backupFileInput" accept=".acfbackup,.json,application/json" hidden>
+    <input type="file" id="backupFileInput" accept=".acf,.setpieces,.acfbackup,.json,.txt,application/json,text/plain,application/octet-stream" hidden>
   </div>
 </aside>
 
@@ -1463,7 +1463,7 @@ body.field-locked #board::after{
 <input type="file" id="projectFile" accept=".json" hidden>
 
 <script>
-const STORAGE_KEY="setPieceBoardPro_v115";
+const STORAGE_KEY="setPieceBoardPro_v116";
 
 function safeStorageGet(key){
   try{
@@ -5560,106 +5560,430 @@ function sanitizeBackupName(value){
     .slice(0,80) || "ACF_Fiorentina_Set_Pieces";
 }
 
+
+const BACKUP_FORMAT="acf-set-pieces";
+const BACKUP_FORMAT_VERSION=2;
+
+function cloneBackupValue(value){
+  return JSON.parse(JSON.stringify(value));
+}
+
 function getBackupPayload(){
   save(false);
   saveArchive();
 
   return {
-    format:"acf-set-pieces-backup",
-    formatVersion:1,
+    format:BACKUP_FORMAT,
+    formatVersion:BACKUP_FORMAT_VERSION,
+    compatibleFormats:[
+      "acf-set-pieces",
+      "acf-set-pieces-backup"
+    ],
     app:"ACF Fiorentina - Set Pieces App",
-    appVersion:"v115",
+    appVersion:"v116",
     createdAt:new Date().toISOString(),
-    currentPage,
-    state:JSON.parse(JSON.stringify(state)),
-    archiveState:JSON.parse(JSON.stringify(archiveState))
+    currentPage:Number(currentPage)||0,
+    state:cloneBackupValue(state),
+    archiveState:cloneBackupValue(archiveState)
   };
 }
 
-function downloadBackupFile(){
+function makeBackupFilename(){
+  const now=new Date();
+  const date=[
+    now.getFullYear(),
+    String(now.getMonth()+1).padStart(2,"0"),
+    String(now.getDate()).padStart(2,"0")
+  ].join("-");
+  const time=[
+    String(now.getHours()).padStart(2,"0"),
+    String(now.getMinutes()).padStart(2,"0")
+  ].join("-");
+
+  const title=sanitizeBackupName(
+    page().title||"ACF_Fiorentina_Set_Pieces"
+  );
+
+  return `${title}_${date}_${time}.acf`;
+}
+
+async function exportBackupFile(){
   try{
     const payload=getBackupPayload();
-    const json=JSON.stringify(payload,null,2);
-    const blob=new Blob([json],{type:"application/json;charset=utf-8"});
+    const content=JSON.stringify(payload);
+    const filename=makeBackupFilename();
+
+    /*
+      text/plain è il MIME più compatibile tra Chrome/macOS,
+      Safari/iPadOS, AirDrop, iCloud Drive e app File.
+      Il contenuto resta JSON UTF-8 standard.
+    */
+    const file=new File(
+      [content],
+      filename,
+      {type:"text/plain;charset=utf-8"}
+    );
+
+    /*
+      Su iPad e iPhone usa il pannello Condividi nativo quando possibile.
+      Consente di salvare direttamente in File o inviare tramite AirDrop.
+    */
+    if(
+      navigator.share &&
+      navigator.canShare &&
+      navigator.canShare({files:[file]})
+    ){
+      try{
+        await navigator.share({
+          files:[file],
+          title:"Backup ACF Set Pieces",
+          text:"Backup completo ACF Fiorentina Set Pieces"
+        });
+        setStatus("Backup esportato");
+        return;
+      }catch(error){
+        if(error?.name==="AbortError"){
+          setStatus("Esportazione annullata");
+          return;
+        }
+      }
+    }
+
+    const blob=new Blob(
+      [content],
+      {type:"text/plain;charset=utf-8"}
+    );
     const url=URL.createObjectURL(blob);
-
-    const now=new Date();
-    const date=[
-      now.getFullYear(),
-      String(now.getMonth()+1).padStart(2,"0"),
-      String(now.getDate()).padStart(2,"0")
-    ].join("-");
-    const time=[
-      String(now.getHours()).padStart(2,"0"),
-      String(now.getMinutes()).padStart(2,"0")
-    ].join("-");
-
-    const title=sanitizeBackupName(page().title||"ACF_Fiorentina_Set_Pieces");
-    const filename=`${title}_${date}_${time}.acfbackup`;
-
     const link=document.createElement("a");
+
     link.href=url;
     link.download=filename;
+    link.rel="noopener";
     link.style.display="none";
+
     document.body.appendChild(link);
     link.click();
 
     setTimeout(()=>{
       URL.revokeObjectURL(url);
       link.remove();
-    },1500);
+    },2500);
 
     setStatus("Backup esportato");
   }catch(error){
-    console.error(error);
-    alert("Impossibile esportare il backup.");
+    console.error("Errore esportazione backup:",error);
+    alert(
+      "Impossibile esportare il backup.\n\n"+
+      "Dettaglio: "+(error?.message||"errore sconosciuto")
+    );
   }
+}
+
+function readFileAsArrayBuffer(file){
+  if(file.arrayBuffer){
+    return file.arrayBuffer();
+  }
+
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=()=>resolve(reader.result);
+    reader.onerror=()=>reject(
+      reader.error||new Error("Impossibile leggere il file")
+    );
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+function decodeBackupBytes(buffer){
+  const bytes=new Uint8Array(buffer);
+
+  /*
+    UTF-8 standard. Gestisce anche file con BOM,
+    file rinominati da iPad e JSON esportati da versioni precedenti.
+  */
+  let text;
+
+  try{
+    text=new TextDecoder("utf-8",{fatal:false}).decode(bytes);
+  }catch(_){
+    text=Array.from(bytes)
+      .map(byte=>String.fromCharCode(byte))
+      .join("");
+  }
+
+  return text
+    .replace(/^\uFEFF/,"")
+    .replace(/\u0000/g,"")
+    .trim();
+}
+
+function decodePossibleDataUrl(text){
+  if(!text.startsWith("data:"))return text;
+
+  const comma=text.indexOf(",");
+  if(comma<0)return text;
+
+  const metadata=text.slice(0,comma);
+  const body=text.slice(comma+1);
+
+  if(/;base64/i.test(metadata)){
+    try{
+      return decodeURIComponent(
+        Array.from(
+          atob(body),
+          char=>"%"+char.charCodeAt(0).toString(16).padStart(2,"0")
+        ).join("")
+      );
+    }catch(_){
+      return atob(body);
+    }
+  }
+
+  try{
+    return decodeURIComponent(body);
+  }catch(_){
+    return body;
+  }
+}
+
+function parseBackupText(rawText){
+  let text=decodePossibleDataUrl(rawText.trim());
+
+  /*
+    Alcune app racchiudono il contenuto in virgolette durante
+    condivisione o rinomina. Prova prima JSON diretto e poi la
+    stringa JSON eventualmente annidata.
+  */
+  let parsed=JSON.parse(text);
+
+  if(typeof parsed==="string"){
+    parsed=JSON.parse(parsed);
+  }
+
+  return parsed;
+}
+
+function makeDefaultArchiveState(){
+  return {
+    folders:[{
+      id:"layout-default",
+      name:"Layout",
+      type:"layout",
+      createdAt:new Date().toISOString(),
+      projects:[]
+    }]
+  };
+}
+
+function normalizeImportedBackup(payload){
+  if(!payload || typeof payload!=="object"){
+    throw new Error("Il file non contiene un backup leggibile");
+  }
+
+  /*
+    Formato v2 corrente.
+  */
+  if(
+    payload.format===BACKUP_FORMAT &&
+    payload.state
+  ){
+    return {
+      formatVersion:Number(payload.formatVersion)||2,
+      createdAt:payload.createdAt||null,
+      appVersion:payload.appVersion||"sconosciuta",
+      currentPage:Number(payload.currentPage)||0,
+      state:payload.state,
+      archiveState:payload.archiveState||makeDefaultArchiveState()
+    };
+  }
+
+  /*
+    Compatibilità con tutti i backup .acfbackup precedenti.
+  */
+  if(
+    payload.format==="acf-set-pieces-backup" &&
+    payload.state
+  ){
+    return {
+      formatVersion:Number(payload.formatVersion)||1,
+      createdAt:payload.createdAt||null,
+      appVersion:payload.appVersion||"versione precedente",
+      currentPage:Number(payload.currentPage)||0,
+      state:payload.state,
+      archiveState:payload.archiveState||makeDefaultArchiveState()
+    };
+  }
+
+  /*
+    Compatibilità con esportazioni contenenti direttamente lo state.
+  */
+  if(
+    Array.isArray(payload.pages) &&
+    Array.isArray(payload.roster)
+  ){
+    return {
+      formatVersion:0,
+      createdAt:null,
+      appVersion:"backup legacy",
+      currentPage:0,
+      state:payload,
+      archiveState:makeDefaultArchiveState()
+    };
+  }
+
+  /*
+    Compatibilità con wrapper generici database/state.
+  */
+  if(
+    payload.database &&
+    Array.isArray(payload.database.pages) &&
+    Array.isArray(payload.database.roster)
+  ){
+    return {
+      formatVersion:0,
+      createdAt:payload.createdAt||null,
+      appVersion:payload.appVersion||"backup legacy",
+      currentPage:Number(payload.currentPage)||0,
+      state:payload.database,
+      archiveState:payload.archiveState||makeDefaultArchiveState()
+    };
+  }
+
+  throw new Error(
+    "Formato non riconosciuto. Sono supportati .acf, .setpieces, "+
+    ".acfbackup e .json."
+  );
+}
+
+function validateImportedState(importedState){
+  if(
+    !importedState ||
+    !Array.isArray(importedState.pages) ||
+    !Array.isArray(importedState.roster)
+  ){
+    throw new Error("Il backup non contiene schemi e rosa validi");
+  }
+
+  if(!importedState.pages.length){
+    throw new Error("Il backup non contiene alcuno schema");
+  }
+
+  importedState.pages.forEach((projectPage,index)=>{
+    if(!projectPage || typeof projectPage!=="object"){
+      throw new Error(`Schema ${index+1} non valido`);
+    }
+
+    if(!Array.isArray(projectPage.positions)){
+      projectPage.positions=Array.from(
+        {length:importedState.roster.length},
+        ()=>null
+      );
+    }
+
+    if(!Array.isArray(projectPage.drawings)){
+      projectPage.drawings=[];
+    }
+    if(!Array.isArray(projectPage.balls)){
+      projectPage.balls=[];
+    }
+    if(!Array.isArray(projectPage.texts)){
+      projectPage.texts=[];
+    }
+
+    while(projectPage.positions.length<importedState.roster.length){
+      projectPage.positions.push(null);
+    }
+
+    if(projectPage.positions.length>importedState.roster.length){
+      projectPage.positions.length=importedState.roster.length;
+    }
+  });
+
+  return importedState;
 }
 
 async function importBackupFile(file){
   if(!file)return;
 
   try{
-    const text=await file.text();
-    const payload=JSON.parse(text);
+    setStatus("Lettura backup…");
 
-    if(
-      payload?.format!=="acf-set-pieces-backup" ||
-      !payload.state ||
-      !payload.archiveState
-    ){
-      throw new Error("Formato backup non valido");
+    const buffer=await readFileAsArrayBuffer(file);
+    const text=decodeBackupBytes(buffer);
+
+    if(!text){
+      throw new Error("Il file selezionato è vuoto");
     }
 
-    const createdAt=payload.createdAt
+    const rawPayload=parseBackupText(text);
+    const imported=normalizeImportedBackup(rawPayload);
+    const importedState=validateImportedState(
+      cloneBackupValue(imported.state)
+    );
+    const importedArchive=cloneBackupValue(
+      imported.archiveState||makeDefaultArchiveState()
+    );
+
+    const createdAt=imported.createdAt
       ? new Intl.DateTimeFormat("it-IT",{
           dateStyle:"short",
           timeStyle:"short"
-        }).format(new Date(payload.createdAt))
-      : "data non disponibile";
+        }).format(new Date(imported.createdAt))
+      : "non disponibile";
 
-    const folders=payload.archiveState?.folders?.length||0;
-    const schemes=payload.state?.pages?.length||0;
+    const schemes=importedState.pages.length;
+    const players=importedState.roster.length;
+    const folders=Array.isArray(importedArchive.folders)
+      ? importedArchive.folders.length
+      : 0;
 
     const confirmed=confirm(
-      `Importare questo backup?\n\n`+
+      "Backup compatibile trovato\n\n"+
+      `File: ${file.name||"backup"}\n`+
       `Creato: ${createdAt}\n`+
-      `Cartelle: ${folders}\n`+
-      `Schemi: ${schemes}\n\n`+
-      `Il database locale corrente verrà sostituito.`
+      `Versione app: ${imported.appVersion}\n`+
+      `Schemi: ${schemes}\n`+
+      `Giocatori: ${players}\n`+
+      `Cartelle: ${folders}\n\n`+
+      "Il database locale corrente verrà sostituito."
     );
 
-    if(!confirmed)return;
+    if(!confirmed){
+      setStatus("Importazione annullata");
+      return;
+    }
 
-    state=JSON.parse(JSON.stringify(payload.state));
-    archiveState=JSON.parse(JSON.stringify(payload.archiveState));
+    state=importedState;
+    archiveState=importedArchive;
+
+    if(
+      !archiveState ||
+      !Array.isArray(archiveState.folders)
+    ){
+      archiveState=makeDefaultArchiveState();
+    }
+
     currentPage=Math.max(
       0,
       Math.min(
-        Number(payload.currentPage)||0,
-        Math.max(0,(state.pages?.length||1)-1)
+        imported.currentPage,
+        Math.max(0,state.pages.length-1)
       )
     );
+
+    /*
+      Applica tutte le migrazioni già previste dall'app:
+      ruoli, rosa, nomi legacy e impostazioni mancanti.
+    */
+    if(typeof applyV94PermanentRosterUpdates==="function"){
+      applyV94PermanentRosterUpdates();
+    }
+    if(typeof ensurePlayerRoles==="function"){
+      ensurePlayerRoles();
+    }
+    if(typeof fixLegacyOpponentTenName==="function"){
+      fixLegacyOpponentTenName();
+    }
 
     safeStorageSet(STORAGE_KEY,JSON.stringify(state));
     safeStorageSet(ARCHIVE_KEY,JSON.stringify(archiveState));
@@ -5682,27 +6006,56 @@ async function importBackupFile(file){
     updateLineupCounters();
 
     setStatus("Backup importato correttamente");
-    alert("Backup importato correttamente.");
+    alert(
+      "Backup importato correttamente.\n\n"+
+      `${schemes} schemi e ${players} giocatori caricati.`
+    );
   }catch(error){
-    console.error(error);
-    alert("Backup non valido o danneggiato.");
+    console.error("Errore importazione backup:",error);
+
+    alert(
+      "Impossibile importare il backup.\n\n"+
+      (error?.message||"File non valido o danneggiato.")+
+      "\n\nProva a salvarlo nell’app File senza modificarne il contenuto."
+    );
+
+    setStatus("Errore importazione backup");
   }
 }
 
-document.getElementById("exportBackupBtn").addEventListener("click",e=>{
-  e.preventDefault();
-  downloadBackupFile();
+document.getElementById("exportBackupBtn").addEventListener("click",event=>{
+  event.preventDefault();
+  exportBackupFile();
 });
 
-document.getElementById("importBackupBtn").addEventListener("click",e=>{
-  e.preventDefault();
-  document.getElementById("backupFileInput").click();
+document.getElementById("importBackupBtn").addEventListener("click",event=>{
+  event.preventDefault();
+
+  const input=document.getElementById("backupFileInput");
+  input.value="";
+
+  /*
+    showPicker è più affidabile nella PWA su iPadOS.
+    Il fallback click mantiene compatibilità con Chrome e Safari meno recenti.
+  */
+  if(typeof input.showPicker==="function"){
+    try{
+      input.showPicker();
+      return;
+    }catch(_){}
+  }
+
+  input.click();
 });
 
-document.getElementById("backupFileInput").addEventListener("change",async e=>{
-  const file=e.target.files?.[0];
+document.getElementById("backupFileInput").addEventListener("change",async event=>{
+  const input=event.currentTarget;
+  const file=input.files && input.files.length
+    ? input.files[0]
+    : null;
+
   await importBackupFile(file);
-  e.target.value="";
+  input.value="";
 });
 
 
