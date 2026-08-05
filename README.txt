@@ -43,14 +43,14 @@ NOVITÀ v117
 - Allinea V rinominato in Verticale
 
 
-CORREZIONE v138 - POSIZIONI INVARIATE
+CORREZIONE v139 - POSIZIONI INVARIATE
 - Rapporto del campo fissato a 1000 × 620 su Mac, iPad e fullscreen
 - Nessuna deformazione passando tra dispositivi
 - Nessun riallargamento entrando in modalità Campo intero
 - Coordinate di giocatori, frecce, forme, palloni e testi mantenute in percentuale
 
 
-NOVITÀ v138
+NOVITÀ v139
 - Dimensione predefinita delle maglie: 90%
 - Trascinamento più fluido di pallone e testi
 - Stessa anagrafica completa per Fiorentina e avversari
@@ -59,14 +59,14 @@ NOVITÀ v138
 - Controllo completo della sintassi JavaScript
 
 
-NOVITÀ v138
+NOVITÀ v139
 - Nuovo sfondo del campo basato sull'immagine campo.png
 - Vecchie linee CSS del campo disattivate
 - Coordinate e posizioni degli oggetti mantenute invariate
 - Compatibilità Mac, iPad, fullscreen, PNG e PDF
 
 
-NOVITÀ v138
+NOVITÀ v139
 - Movimento pallone più fluido su Mac e iPad
 - Movimento testo più fluido su Mac e iPad
 - Eliminati i rerender durante il trascinamento
@@ -74,7 +74,7 @@ NOVITÀ v138
 - Bloccato lo scorrimento involontario della pagina durante il drag
 
 
-NOVITÀ v138
+NOVITÀ v139
 - Flag Numero nel cerchio per Fiorentina e avversari
 - Opzione Avversari: linea tratteggiata da compilare a penna
 - Navigazione schema precedente/successivo in Campo intero
@@ -83,7 +83,7 @@ NOVITÀ v138
 - Nuove preferenze incluse nel backup
 
 
-NOVITÀ v138
+NOVITÀ v139
 - Linea avversari continua anziché tratteggiata
 - Linea avversari spostata più in basso
 - Flag numero applicato soltanto ai giocatori selezionati
@@ -91,14 +91,14 @@ NOVITÀ v138
 - Stato misto del flag quando la selezione contiene giocatori con impostazioni differenti
 
 
-NOVITÀ v138
+NOVITÀ v139
 - Flag Linea nei selezionati applicato soltanto agli avversari selezionati
 - Possibilità di mostrare o nascondere la linea per singoli avversari o gruppi
 - Stato intermedio del flag per selezioni miste
 - Il flag resta disabilitato se non è selezionato alcun avversario
 
 
-FIX v138 - TRATTEGGIO FRECCE
+FIX v139 - TRATTEGGIO FRECCE
 - Applicato realmente stroke-dasharray al corpo di frecce dritte e curve
 - Punta della freccia sempre piena
 - Quattro livelli: continua, tratto corto, tratto medio, puntinata
@@ -107,7 +107,7 @@ FIX v138 - TRATTEGGIO FRECCE
 - Compatibilità con frecce create nelle versioni precedenti
 
 
-NOVITÀ v138 - AGGIORNAMENTO AUTOMATICO PWA
+NOVITÀ v139 - AGGIORNAMENTO AUTOMATICO PWA
 - Cache service worker versionata per ogni release
 - Eliminazione automatica delle cache precedenti
 - index.html sempre controllato dalla rete prima della cache
@@ -118,7 +118,7 @@ NOVITÀ v138 - AGGIORNAMENTO AUTOMATICO PWA
 - Nessuna necessità di svuotare manualmente la cache
 
 
-NOVITÀ v138 - RENDERING CAMPO
+NOVITÀ v139 - RENDERING CAMPO
 - Canvas logico fisso 1000 × 620
 - Il campo viene ridimensionato soltanto tramite transform: scale()
 - Maglie, palloni, testi, frecce e forme crescono insieme al campo
@@ -127,7 +127,7 @@ NOVITÀ v138 - RENDERING CAMPO
 - Adattamento automatico a rotazione e ridimensionamento
 
 
-FIX v138 - CAMPO INTERO
+FIX v139 - CAMPO INTERO
 - Corretto il campo ingrandito e tagliato in modalità fullscreen
 - Eliminata la centratura tramite translate, instabile su Safari e Chrome
 - Posizione del canvas calcolata esplicitamente in pixel
@@ -136,7 +136,7 @@ FIX v138 - CAMPO INTERO
 - Ricalcolo automatico dopo rotazione e cambio dimensione
 
 
-FIX v138 - FULLSCREEN PERFETTO
+FIX v139 - FULLSCREEN PERFETTO
 - Scala calcolata sul visualViewport reale del browser
 - Campo sempre interamente visibile
 - Centratura orizzontale e verticale precisa
@@ -147,7 +147,7 @@ FIX v138 - FULLSCREEN PERFETTO
 - Ricalcolo dopo resize, rotazione, cambio barra browser e riapertura app
 
 
-FIX v138 - CAMPO INTERO
+FIX v139 - CAMPO INTERO
 - Campo sempre completamente visibile
 - Margini di sicurezza più ampi sopra, sotto e ai lati
 - Calcolo basato sul viewport reale del browser
@@ -156,7 +156,7 @@ FIX v138 - CAMPO INTERO
 - Campo, maglie, palloni, frecce, testi e forme scalano insieme
 
 
-FIX v138 - CAMPO INTERO
+FIX v139 - CAMPO INTERO
 - Centratura reale orizzontale e verticale
 - Campo ingrandito uniformemente
 - Spazi bianchi ridotti al minimo
@@ -165,7 +165,7 @@ FIX v138 - CAMPO INTERO
 - Nessun taglio ai bordi
 
 
-NOVITÀ v138 - MODALITÀ PANCHINA E SPOGLIATOIO
+NOVITÀ v139 - MODALITÀ PANCHINA E SPOGLIATOIO
 - Pulsante PANCHINA a sinistra di Sostituzione
 - Pulsante SPOGLIATOIO a destra di Sostituzione
 - PANCHINA mostra cognome, cerchio bianco e numero su tutti i giocatori
@@ -175,7 +175,7 @@ NOVITÀ v138 - MODALITÀ PANCHINA E SPOGLIATOIO
 - Preferenze incluse automaticamente nei backup
 
 
-NOVITÀ v138
+NOVITÀ v139
 - PANCHINA e SPOGLIATOIO diventano modalità globali del progetto
 - La modalità vale automaticamente per tutti gli schemi
 - I nuovi schemi e quelli duplicati ereditano la modalità attiva
@@ -184,7 +184,7 @@ NOVITÀ v138
 - Rimossa definitivamente la scritta tecnica di stato sotto Sostituzione
 
 
-NOVITÀ v138
+NOVITÀ v139
 - Numero nei selezionati modifica soltanto lo schema corrente
 - Linea nei selezionati modifica soltanto lo schema corrente
 - Ogni schema conserva autonomamente numeri e linee personalizzate
@@ -192,7 +192,7 @@ NOVITÀ v138
 - Override per-schema inclusi automaticamente nei backup
 
 
-NOVITÀ v138
+NOVITÀ v139
 - Nuovo pulsante PREPARAZIONE accanto a SPOGLIATOIO
 - PREPARAZIONE riattiva la modifica libera di numeri, nomi, linee e cerchi
 - PANCHINA e SPOGLIATOIO restano modalità globali per tutti gli schemi
@@ -201,7 +201,7 @@ NOVITÀ v138
 - Stato attivo evidenziato sui tre pulsanti modalità
 
 
-NOVITÀ v138
+NOVITÀ v139
 - In modalità SPOGLIATOIO i nomi restano nascosti
 - Il flag Linea nei selezionati resta utilizzabile sugli avversari
 - La linea può essere mostrata o nascosta soltanto sugli avversari selezionati
@@ -209,10 +209,17 @@ NOVITÀ v138
 - PANCHINA continua a mostrare nome, cerchio e numero su tutti gli schemi
 
 
-NOVITÀ v138
+NOVITÀ v139
 - Numero nei selezionati utilizzabile in PANCHINA, SPOGLIATOIO e PREPARAZIONE
 - Linea nei selezionati utilizzabile in PANCHINA, SPOGLIATOIO e PREPARAZIONE
 - Le modifiche restano limitate allo schema corrente
 - PANCHINA e SPOGLIATOIO impostano la base globale su tutti gli schemi
 - PREPARAZIONE e Sostituzione non si sovrappongono più
 - Header reso responsive su Mac e iPad
+
+
+FIX v139
+- Pulsante Sostituzione separato dal gruppo PANCHINA/SPOGLIATOIO/PREPARAZIONE
+- Nessuna sovrapposizione tra i quattro pulsanti
+- Header responsive su Mac e iPad
+- Su schermi stretti le modalità restano scorrevoli senza coprire Sostituzione
