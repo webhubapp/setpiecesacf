@@ -253,3 +253,12 @@ NOVITÀ v144
 - Linea sotto le maglie abbassata di circa 7 px
 - Colore linea aggiornato a #D0CFD7
 - Lunghezze linea Fiorentina e avversari mantenute come in v143
+
+
+FIX v146
+- Allineato il versioning interno a v146
+- Aggiornati STORAGE_KEY, appVersion e service worker
+- Corretto João Mário: firstName João, lastName Mário, name João Mário
+- Eliminato il nome duplicato João João Mário
+- Ripuliti i riferimenti residui a pulsanti Undo/Redo inesistenti
+- Controllo sintassi JavaScript completato

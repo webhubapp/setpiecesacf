@@ -2023,7 +2023,7 @@ body.field-view-mode #board{
 <input type="file" id="projectFile" accept=".json" hidden>
 
 <script>
-const STORAGE_KEY="setPieceBoardPro_v144";
+const STORAGE_KEY="setPieceBoardPro_v146";
 
 function safeStorageGet(key){
   try{
@@ -2207,10 +2207,8 @@ function redo(){
   setStatus("Operazione ripristinata");
 }
 function updateHistoryButtons(){
-  const u=document.getElementById("undoBtn");
-  const r=document.getElementById("redoBtn");
-  if(u)u.disabled=!undoStack.length;
-  if(r)r.disabled=!redoStack.length;
+  const touchUndo=document.getElementById("touchUndoBtn");
+  if(touchUndo)touchUndo.disabled=!undoStack.length;
 }
 
 const defaultRoster=[];
@@ -2234,7 +2232,7 @@ const FIORENTINA_PRESET=[
   {number:65,firstName:"Fabiano",lastName:"Parisi",name:"Fabiano Parisi",team:"home",color:"#5b3192"},
   {number:0,firstName:"Álex",lastName:"Jiménez",name:"Álex Jiménez",team:"home",color:"#5b3192"},
   {number:2,firstName:"",lastName:"Dodô",name:"Dodô",team:"home",color:"#5b3192"},
-  {number:0,firstName:"João",lastName:"João Mário",name:"João João Mário",team:"home",color:"#5b3192"},
+  {number:0,firstName:"João",lastName:"Mário",name:"João Mário",team:"home",color:"#5b3192"},
   {number:8,firstName:"Rolando",lastName:"Mandragora",name:"Rolando Mandragora",team:"home",color:"#5b3192"},
   {number:0,firstName:"Lapo",lastName:"Deli",name:"Lapo Deli",team:"home",color:"#5b3192"},
   {number:0,firstName:"Christ Inao",lastName:"Oulaï",name:"Christ Inao Oulaï",team:"home",color:"#5b3192"},
@@ -4994,8 +4992,6 @@ document.getElementById("saveBtn").addEventListener("click",()=>{
   updateHomeRosterTemplate();
   save(true);
 });
-document.getElementById("undoBtn")?.addEventListener("click",undo);
-document.getElementById("redoBtn")?.addEventListener("click",redo);
 document.getElementById("clearDraw").addEventListener("click",()=>{pushHistory();page().drawings=[];renderDrawings();save(false)});
 document.getElementById("applyPreset").addEventListener("click",()=>{
   const v=document.getElementById("presetSelect").value;if(!v)return;pushHistory();const P=page().positions;
@@ -6426,7 +6422,7 @@ function getBackupPayload(){
       "acf-set-pieces-backup"
     ],
     app:"ACF Fiorentina - Set Pieces App",
-    appVersion:"v144",
+    appVersion:"v146",
     createdAt:new Date().toISOString(),
     currentPage:Number(currentPage)||0,
     state:cloneBackupValue(state),
