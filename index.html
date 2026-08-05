@@ -1736,7 +1736,7 @@ body.field-view-mode #board{
 <input type="file" id="projectFile" accept=".json" hidden>
 
 <script>
-const STORAGE_KEY="setPieceBoardPro_v134";
+const STORAGE_KEY="setPieceBoardPro_v135";
 
 function safeStorageGet(key){
   try{
@@ -2099,6 +2099,9 @@ function load(){
   state.pages.forEach(p=>{
     if(!Array.isArray(p.balls))p.balls=[];
     if(!Array.isArray(p.texts))p.texts=[];
+    if(!p.playerDisplayOverrides || typeof p.playerDisplayOverrides!=="object"){
+      p.playerDisplayOverrides={};
+    }
     p.positions=Array.from({length:state.roster.length},(_,i)=>{
       const pos=p.positions?.[i];
       if(!pos || !Number.isFinite(pos.x) || !Number.isFinite(pos.y))return null;
@@ -2206,6 +2209,37 @@ function fixLegacyOpponentTenName(){
 }
 
 
+
+function ensureCurrentPageDisplayOverrides(){
+  const current=page();
+  if(!current.playerDisplayOverrides || typeof current.playerDisplayOverrides!=="object"){
+    current.playerDisplayOverrides={};
+  }
+  return current.playerDisplayOverrides;
+}
+
+function getPlayerDisplayOverride(index){
+  const overrides=ensureCurrentPageDisplayOverrides();
+  const player=state.roster[index];
+  const key=player?.id ? String(player.id) : String(index);
+
+  if(!overrides[key] || typeof overrides[key]!=="object"){
+    overrides[key]={};
+  }
+
+  return overrides[key];
+}
+
+function getEffectivePlayerDisplayValue(index,property,fallback){
+  const override=getPlayerDisplayOverride(index);
+
+  if(typeof override[property]==="boolean"){
+    return override[property];
+  }
+
+  return fallback;
+}
+
 function getSelectedPlayerIndexesForNumberToggle(){
   const indexes=new Set();
 
@@ -2233,14 +2267,22 @@ function syncRosterDisplayOptions(){
   if(numbers){
     const indexes=getSelectedPlayerIndexesForNumberToggle();
     numbers.disabled=indexes.length===0;
+    const numberValues=indexes.map(index=>
+      getEffectivePlayerDisplayValue(
+        index,
+        "showShirtNumber",
+        state.roster[index].showShirtNumber===true
+      )
+    );
+
     numbers.indeterminate=
       indexes.length>0 &&
-      indexes.some(index=>state.roster[index].showShirtNumber===true) &&
-      indexes.some(index=>state.roster[index].showShirtNumber!==true);
+      numberValues.some(Boolean) &&
+      numberValues.some(value=>!value);
 
     numbers.checked=
       indexes.length>0 &&
-      indexes.every(index=>state.roster[index].showShirtNumber===true);
+      numberValues.every(Boolean);
 
     numbers.title=indexes.length
       ? "Mostra o nasconde il numero nei giocatori selezionati"
@@ -2251,14 +2293,22 @@ function syncRosterDisplayOptions(){
     const opponentIndexes=getSelectedOpponentIndexesForBlankLine();
 
     blankLine.disabled=opponentIndexes.length===0;
+    const lineValues=opponentIndexes.map(index=>
+      getEffectivePlayerDisplayValue(
+        index,
+        "showOpponentBlankLine",
+        state.roster[index].showOpponentBlankLine===true
+      )
+    );
+
     blankLine.indeterminate=
       opponentIndexes.length>0 &&
-      opponentIndexes.some(index=>state.roster[index].showOpponentBlankLine===true) &&
-      opponentIndexes.some(index=>state.roster[index].showOpponentBlankLine!==true);
+      lineValues.some(Boolean) &&
+      lineValues.some(value=>!value);
 
     blankLine.checked=
       opponentIndexes.length>0 &&
-      opponentIndexes.every(index=>state.roster[index].showOpponentBlankLine===true);
+      lineValues.every(Boolean);
 
     blankLine.title=opponentIndexes.length
       ? "Mostra o nasconde la linea negli avversari selezionati"
@@ -2972,12 +3022,18 @@ function renderPlayers(){
       ?'<circle cx="28" cy="29" r="14.5" fill="#ffffff"/>'
       :"";
 
+    const schemaShowNumber=getEffectivePlayerDisplayValue(
+      i,
+      "showShirtNumber",
+      pl.showShirtNumber===true
+    );
+
     const effectiveShowNumber=
       state.presentationMode==="bench"
         ? true
         : state.presentationMode==="locker"
           ? false
-          : pl.showShirtNumber===true;
+          : schemaShowNumber;
 
     const visibleNumber=(
       effectiveShowNumber &&
@@ -2989,6 +3045,17 @@ function renderPlayers(){
     )
       ? `<text class="jersey-number" x="28" y="29.5">${escapeHtml(String(pl.number))}</text>`
       : "";
+
+    const schemaShowOpponentLine=getEffectivePlayerDisplayValue(
+      i,
+      "showOpponentBlankLine",
+      pl.showOpponentBlankLine===true
+    );
+
+    const effectiveShowOpponentLine=
+      state.presentationMode==="normal" &&
+      pl.team==="away" &&
+      schemaShowOpponentLine;
 
     const jerseySvg=`
       <svg class="jersey-svg" viewBox="0 0 56 50" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -3014,19 +3081,13 @@ function renderPlayers(){
 
     el.innerHTML=`
       ${jerseySvg}
-      <div class="player-tag${
-        state.presentationMode==="normal" &&
-        pl.team==="away" &&
-        pl.showOpponentBlankLine===true
-          ? " blank-opponent-line"
-          : ""
-      }">${
+      <div class="player-tag${effectiveShowOpponentLine ? " blank-opponent-line" : ""}">${
         state.presentationMode==="locker"
           ? ""
           : state.presentationMode==="bench"
             ? escapeHtml(String(pl.lastName||pl.name||pl.firstName||"").toUpperCase())
             : (
-                pl.team==="away" && pl.showOpponentBlankLine===true
+                effectiveShowOpponentLine
                   ? ""
                   : escapeHtml(pl.showLastName===false?"":String(pl.lastName||pl.name||pl.firstName||"").toUpperCase())
               )
@@ -6061,7 +6122,7 @@ function getBackupPayload(){
       "acf-set-pieces-backup"
     ],
     app:"ACF Fiorentina - Set Pieces App",
-    appVersion:"v134",
+    appVersion:"v135",
     createdAt:new Date().toISOString(),
     currentPage:Number(currentPage)||0,
     state:cloneBackupValue(state),
@@ -6874,10 +6935,10 @@ document.getElementById("showShirtNumbers").addEventListener("change",event=>{
   pushHistory();
 
   indexes.forEach(index=>{
-    state.roster[index].showShirtNumber=event.target.checked;
+    const override=getPlayerDisplayOverride(index);
+    override.showShirtNumber=event.target.checked;
   });
 
-  updateHomeRosterTemplate();
   renderPlayers();
   renderRoster();
   syncRosterDisplayOptions();
@@ -6885,8 +6946,8 @@ document.getElementById("showShirtNumbers").addEventListener("change",event=>{
 
   setStatus(
     event.target.checked
-      ? "Numero mostrato nei giocatori selezionati"
-      : "Numero nascosto nei giocatori selezionati"
+      ? "Numero mostrato nei selezionati dello schema corrente"
+      : "Numero nascosto nei selezionati dello schema corrente"
   );
 });
 document.getElementById("opponentBlankLine").addEventListener("change",event=>{
@@ -6902,10 +6963,10 @@ document.getElementById("opponentBlankLine").addEventListener("change",event=>{
   pushHistory();
 
   indexes.forEach(index=>{
-    state.roster[index].showOpponentBlankLine=event.target.checked;
+    const override=getPlayerDisplayOverride(index);
+    override.showOpponentBlankLine=event.target.checked;
   });
 
-  updateHomeRosterTemplate();
   renderPlayers();
   renderRoster();
   syncRosterDisplayOptions();
@@ -6913,8 +6974,8 @@ document.getElementById("opponentBlankLine").addEventListener("change",event=>{
 
   setStatus(
     event.target.checked
-      ? "Linea mostrata negli avversari selezionati"
-      : "Linea nascosta negli avversari selezionati"
+      ? "Linea mostrata negli avversari selezionati dello schema corrente"
+      : "Linea nascosta negli avversari selezionati dello schema corrente"
   );
 });
 
