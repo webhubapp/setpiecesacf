@@ -239,3 +239,10 @@ NOVITÀ v141
 - In SPOGLIATOIO: niente nome, niente numero e niente cerchio bianco
 - In SPOGLIATOIO: linea continua sotto tutte le maglie
 - Linea sotto la maglia ridotta del 35%
+
+
+NOVITÀ v143
+- Pulsante Sostituzione abbassato ulteriormente del 35%
+- Linea sotto le maglie Fiorentina ridotta del 40%
+- Linea avversari lasciata invariata
+- Nessuna modifica alla logica dell'app

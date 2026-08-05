@@ -1561,7 +1561,7 @@ body.field-view-mode #board{
 .topbar-substitution-slot{
   position:absolute;
   left:50%;
-  top:50%;
+  top: 67.5%;
   transform:translate(-50%,-50%);
   display:flex;
   align-items:center;
@@ -1614,6 +1614,12 @@ body.field-view-mode #board{
 
 .player.home .player-tag.blank-opponent-line{width:38px!important;}
 .player.away .player-tag.blank-opponent-line{width:65px!important;}
+
+
+/* v143: linea Fiorentina più corta del 40% rispetto alla v142 */
+.player-tag.blank-home-line{
+  width:29px!important;
+}
 
 </style>
 
@@ -2017,7 +2023,7 @@ body.field-view-mode #board{
 <input type="file" id="projectFile" accept=".json" hidden>
 
 <script>
-const STORAGE_KEY="setPieceBoardPro_v142";
+const STORAGE_KEY="setPieceBoardPro_v143";
 
 function safeStorageGet(key){
   try{
@@ -3353,7 +3359,15 @@ function renderPlayers(){
 
     el.innerHTML=`
       ${jerseySvg}
-      <div class="player-tag${effectiveShowOpponentLine ? " blank-opponent-line" : ""}">${
+      <div class="player-tag${
+        effectiveShowOpponentLine
+          ? (
+              pl.team==="home" || pl.team==="gk"
+                ? " blank-opponent-line blank-home-line"
+                : " blank-opponent-line"
+            )
+          : ""
+      }">${
         effectiveShowOpponentLine
           ? ""
           : state.presentationMode==="bench"
@@ -6412,7 +6426,7 @@ function getBackupPayload(){
       "acf-set-pieces-backup"
     ],
     app:"ACF Fiorentina - Set Pieces App",
-    appVersion:"v142",
+    appVersion:"v143",
     createdAt:new Date().toISOString(),
     currentPage:Number(currentPage)||0,
     state:cloneBackupValue(state),
