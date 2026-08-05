@@ -1404,7 +1404,7 @@ body.field-view-mode .field-fullscreen-nav:disabled{opacity:.28}
       </label>
       <label class="roster-option-toggle">
         <input type="checkbox" id="opponentBlankLine">
-        <span>Avversari: linea da compilare</span>
+        <span>Linea nei selezionati</span>
       </label>
       <div class="roster" id="roster"></div>
     </div>
@@ -1601,7 +1601,7 @@ body.field-view-mode .field-fullscreen-nav:disabled{opacity:.28}
 <input type="file" id="projectFile" accept=".json" hidden>
 
 <script>
-const STORAGE_KEY="setPieceBoardPro_v124";
+const STORAGE_KEY="setPieceBoardPro_v125";
 
 function safeStorageGet(key){
   try{
@@ -1918,7 +1918,6 @@ function load(){
     if(raw)state=JSON.parse(raw);
   }catch(e){}
   if(!state.playerScale)state.playerScale=.90;
-  if(typeof state.opponentBlankLine!=="boolean")state.opponentBlankLine=false;
   if(state.homeChestCircle===undefined)state.homeChestCircle=true;
   if(state.awayChestCircle===undefined)state.awayChestCircle=false;
   if(state.homeRosterLoaded===undefined){
@@ -2027,6 +2026,14 @@ function ensurePlayerRoles(){
   });
   applyNumbers(state.roster);
   applyNumbers(state.homeRosterTemplate);
+
+  const applyBlankLines=list=>Array.isArray(list)&&list.forEach(player=>{
+    if(typeof player.showOpponentBlankLine!=="boolean"){
+      player.showOpponentBlankLine=false;
+    }
+  });
+  applyBlankLines(state.roster);
+  applyBlankLines(state.homeRosterTemplate);
 }
 
 
@@ -2075,6 +2082,12 @@ function getSelectedPlayerIndexesForNumberToggle(){
   return [...indexes];
 }
 
+function getSelectedOpponentIndexesForBlankLine(){
+  return getSelectedPlayerIndexesForNumberToggle().filter(
+    index=>state.roster[index]?.team==="away"
+  );
+}
+
 function syncRosterDisplayOptions(){
   const numbers=document.getElementById("showShirtNumbers");
   const blankLine=document.getElementById("opponentBlankLine");
@@ -2096,7 +2109,23 @@ function syncRosterDisplayOptions(){
       : "Seleziona almeno un giocatore";
   }
 
-  if(blankLine)blankLine.checked=Boolean(state.opponentBlankLine);
+  if(blankLine){
+    const opponentIndexes=getSelectedOpponentIndexesForBlankLine();
+
+    blankLine.disabled=opponentIndexes.length===0;
+    blankLine.indeterminate=
+      opponentIndexes.length>0 &&
+      opponentIndexes.some(index=>state.roster[index].showOpponentBlankLine===true) &&
+      opponentIndexes.some(index=>state.roster[index].showOpponentBlankLine!==true);
+
+    blankLine.checked=
+      opponentIndexes.length>0 &&
+      opponentIndexes.every(index=>state.roster[index].showOpponentBlankLine===true);
+
+    blankLine.title=opponentIndexes.length
+      ? "Mostra o nasconde la linea negli avversari selezionati"
+      : "Seleziona almeno un avversario";
+  }
 }
 
 function setStatus(msg){const el=document.getElementById("status");el.textContent=msg;clearTimeout(setStatus.t);setStatus.t=setTimeout(()=>el.textContent="Pronto",1600)}
@@ -2834,8 +2863,8 @@ function renderPlayers(){
 
     el.innerHTML=`
       ${jerseySvg}
-      <div class="player-tag${pl.team==="away" && state.opponentBlankLine ? " blank-opponent-line" : ""}">${
-        pl.team==="away" && state.opponentBlankLine
+      <div class="player-tag${pl.team==="away" && pl.showOpponentBlankLine===true ? " blank-opponent-line" : ""}">${
+        pl.team==="away" && pl.showOpponentBlankLine===true
           ? ""
           : escapeHtml(pl.showLastName===false?"":String(pl.lastName||pl.name||pl.firstName||"").toUpperCase())
       }</div>
@@ -5781,7 +5810,7 @@ function getBackupPayload(){
       "acf-set-pieces-backup"
     ],
     app:"ACF Fiorentina - Set Pieces App",
-    appVersion:"v124",
+    appVersion:"v125",
     createdAt:new Date().toISOString(),
     currentPage:Number(currentPage)||0,
     state:cloneBackupValue(state),
@@ -6431,9 +6460,32 @@ document.getElementById("showShirtNumbers").addEventListener("change",event=>{
   );
 });
 document.getElementById("opponentBlankLine").addEventListener("change",event=>{
-  state.opponentBlankLine=event.target.checked;
+  const indexes=getSelectedOpponentIndexesForBlankLine();
+
+  if(!indexes.length){
+    event.target.checked=false;
+    event.target.indeterminate=false;
+    setStatus("Seleziona almeno un avversario");
+    return;
+  }
+
+  pushHistory();
+
+  indexes.forEach(index=>{
+    state.roster[index].showOpponentBlankLine=event.target.checked;
+  });
+
+  updateHomeRosterTemplate();
   renderPlayers();
+  renderRoster();
+  syncRosterDisplayOptions();
   save(false);
+
+  setStatus(
+    event.target.checked
+      ? "Linea mostrata negli avversari selezionati"
+      : "Linea nascosta negli avversari selezionati"
+  );
 });
 
 document.getElementById("touchUndoBtn").addEventListener("click",undo);
