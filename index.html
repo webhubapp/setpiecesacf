@@ -2023,7 +2023,7 @@ body.field-view-mode #board{
 <input type="file" id="projectFile" accept=".json" hidden>
 
 <script>
-const STORAGE_KEY="setPieceBoardPro_v147";
+const STORAGE_KEY="setPieceBoardPro_v148";
 
 function safeStorageGet(key){
   try{
@@ -4208,7 +4208,7 @@ function renderDrawings(){
 
   page().drawings.forEach((d,i)=>{
     d.color=d.color||drawingDefaults.color;
-    d.width=Number(d.width)||drawingDefaults.width;
+    d.width=normalizeDrawingWidth(d.width,drawingDefaults.width);
     d.headSize=Number(d.headSize)||drawingDefaults.headSize;
     d.opacity=Number.isFinite(Number(d.opacity))?Number(d.opacity):1;
     d.shapeMode=d.shapeMode||"both";
@@ -4375,7 +4375,10 @@ function renderDrawings(){
     visible.setAttribute("d",visiblePath);
     visible.setAttribute("fill","none");
     visible.setAttribute("stroke",d.color);
-    visible.setAttribute("stroke-width",d.width);
+    const renderedWidth=normalizeDrawingWidth(d.width,drawingDefaults.width);
+    visible.setAttribute("stroke-width",String(renderedWidth));
+    visible.style.strokeWidth=String(renderedWidth);
+    visible.setAttribute("vector-effect","non-scaling-stroke");
 
     /*
       Tratteggio del solo corpo della freccia.
@@ -4387,9 +4390,9 @@ function renderDrawings(){
     const dashStyle=Math.max(0,Math.min(3,Number(d.dashStyle)||0));
     const dashPatterns={
       0:"",
-      1:`${Math.max(9,d.width*2.2)} ${Math.max(7,d.width*1.7)}`,
-      2:`${Math.max(20,d.width*4.5)} ${Math.max(11,d.width*2.2)}`,
-      3:`${Math.max(2,d.width*.45)} ${Math.max(9,d.width*2.1)}`
+      1:`${Math.max(9,renderedWidth*2.2)} ${Math.max(7,renderedWidth*1.7)}`,
+      2:`${Math.max(20,renderedWidth*4.5)} ${Math.max(11,renderedWidth*2.2)}`,
+      3:`${Math.max(2,renderedWidth*.45)} ${Math.max(9,renderedWidth*2.1)}`
     };
     const dashPattern=dashPatterns[dashStyle];
 
@@ -4407,7 +4410,7 @@ function renderDrawings(){
     );
     visible.setAttribute("stroke-linejoin","round");
     visible.setAttribute("shape-rendering","geometricPrecision");
-    visible.setAttribute("filter","url(#arrowShadow)");
+    visible.removeAttribute("filter");
     visible.setAttribute("pointer-events","none");
 
     const headData=arrowGeometry(d);
@@ -4425,7 +4428,7 @@ function renderDrawings(){
     arrowHead.style.strokeDasharray="none";
     arrowHead.setAttribute("stroke","none");
     arrowHead.setAttribute("shape-rendering","geometricPrecision");
-    arrowHead.setAttribute("filter","url(#arrowShadow)");
+    arrowHead.removeAttribute("filter");
     arrowHead.setAttribute("pointer-events","none");
 
     const hit=document.createElementNS("http://www.w3.org/2000/svg","path");
@@ -4523,6 +4526,27 @@ function commitDragHistory(){
   save(false);
 }
 
+
+const MIN_DRAWING_WIDTH=1;
+const MAX_DRAWING_WIDTH=18;
+
+function normalizeDrawingWidth(value,fallback=drawingDefaults.width){
+  const numeric=Number(value);
+  const safe=Number.isFinite(numeric) ? numeric : Number(fallback);
+  return Math.max(
+    MIN_DRAWING_WIDTH,
+    Math.min(MAX_DRAWING_WIDTH,Number.isFinite(safe)?safe:6)
+  );
+}
+
+function getCurrentDrawingWidth(){
+  const control=document.getElementById("drawingWidth");
+  return normalizeDrawingWidth(
+    control?.value,
+    drawingDefaults.width
+  );
+}
+
 function syncDrawingControls(){
   const d=selectedDrawing!==null?page().drawings[selectedDrawing]:null;
   const src=d||drawingDefaults;
@@ -4535,7 +4559,7 @@ function syncDrawingControls(){
   const shapeMode=document.getElementById("shapeMode");
 
   if(color)color.value=src.color||drawingDefaults.color;
-  if(width)width.value=src.width||drawingDefaults.width;
+  if(width)width.value=normalizeDrawingWidth(src.width,drawingDefaults.width);
   if(head)head.value=src.headSize||drawingDefaults.headSize;
   if(curve)curve.value=src.curveOffset??drawingDefaults.curveOffset;
   if(opacity)opacity.value=src.opacity??drawingDefaults.opacity;
@@ -4757,13 +4781,12 @@ document.getElementById("board").addEventListener("pointerup",e=>{
       x2:end.x,
       y2:end.y,
       color:drawingDefaults.color,
-      width:drawingDefaults.width,
+      width:getCurrentDrawingWidth(),
       headSize:drawingDefaults.headSize,
       curveOffset:drawingDefaults.curveOffset,
       opacity:drawingDefaults.opacity,
       shapeMode:drawingDefaults.shapeMode,
-      dashStyle:Number(drawingDefaults.dashStyle)||0,
-      dashStyle:drawingDefaults.dashStyle
+      dashStyle:Number(drawingDefaults.dashStyle)||0
     };
     if(tool==="curve"){
       const dx=end.x-drawingStart.x,dy=end.y-drawingStart.y;
@@ -4793,6 +4816,7 @@ document.getElementById("board").addEventListener("pointerup",e=>{
 document.querySelectorAll(".library-icon[data-tool]").forEach(btn=>{
   btn.addEventListener("click",()=>{
     clearAllSelections();
+    drawingDefaults.width=getCurrentDrawingWidth();
     tool=btn.dataset.tool;
     document.querySelectorAll(".library-icon[data-tool]").forEach(b=>b.style.outline=b===btn?"2px solid #f6c400":"none");
     setStatus(
@@ -4834,7 +4858,9 @@ function applyDrawingStyleChange(property,value){
 
     indexes.forEach(index=>{
       const d=page().drawings[index];
-      d[property]=value;
+      d[property]=property==="width"
+        ? normalizeDrawingWidth(value,drawingDefaults.width)
+        : value;
 
       if(property==="curveOffset" && d.type==="curve"){
         const dx=d.x2-d.x1;
@@ -4850,7 +4876,9 @@ function applyDrawingStyleChange(property,value){
       }
     });
   }else{
-    drawingDefaults[property]=value;
+    drawingDefaults[property]=property==="width"
+      ? normalizeDrawingWidth(value,drawingDefaults.width)
+      : value;
   }
 
   renderDrawings();
@@ -4859,7 +4887,12 @@ function applyDrawingStyleChange(property,value){
 }
 
 document.getElementById("drawingColor").addEventListener("input",e=>applyDrawingStyleChange("color",e.target.value));
-document.getElementById("drawingWidth").addEventListener("input",e=>applyDrawingStyleChange("width",Number(e.target.value)));
+document.getElementById("drawingWidth").addEventListener("input",event=>{
+  applyDrawingStyleChange(
+    "width",
+    normalizeDrawingWidth(event.target.value,drawingDefaults.width)
+  );
+});
 document.getElementById("drawingHead").addEventListener("input",e=>applyDrawingStyleChange("headSize",Number(e.target.value)));
 document.getElementById("drawingCurve").addEventListener("input",e=>applyDrawingStyleChange("curveOffset",Number(e.target.value)));
 document.getElementById("drawingOpacity").addEventListener("input",e=>applyDrawingStyleChange("opacity",Number(e.target.value)));
@@ -6461,7 +6494,7 @@ function getBackupPayload(){
       "acf-set-pieces-backup"
     ],
     app:"ACF Fiorentina - Set Pieces App",
-    appVersion:"v147",
+    appVersion:"v148",
     createdAt:new Date().toISOString(),
     currentPage:Number(currentPage)||0,
     state:cloneBackupValue(state),

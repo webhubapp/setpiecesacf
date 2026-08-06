@@ -271,3 +271,14 @@ FIX v147
 - Modifica applicata soltanto allo schema corrente quando ci sono giocatori selezionati
 - Senza selezione, il flag aggiorna il valore predefinito della squadra
 - PANCHINA e SPOGLIATOIO continuano a impostare la base globale su tutti gli schemi
+
+
+FIX v148 - SPESSORE FRECCE
+- Unica sorgente dello spessore: cursore Spessore
+- Nuove frecce create sempre con il valore esatto del cursore
+- Rimossa la duplicazione della proprietà dashStyle
+- Spessore normalizzato e salvato come numero
+- vector-effect non-scaling-stroke per resa uniforme
+- Rimossa l'ombra direzionale che alterava otticamente lo spessore
+- Tratteggio ricalcolato sullo spessore reale
+- Compatibilità con frecce delle versioni precedenti
